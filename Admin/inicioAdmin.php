@@ -167,6 +167,8 @@ if (isset($_SESSION['id_doctor'])) {
                                     } ?> </td>
                               <td> <?php echo $row['descripcion'] ?> </td>
                               <td> <a class="button is-info" data-toggle="tooltip" data-placement="top" title="Editar" name="editar" href="./realizar_consulta.php?accion=UDT&id=<?php echo $row['id_cita'] ?>"> <i class="fas fa-edit"></i> </a> </td>
+                              <td> <a class="button is-info" data-toggle="tooltip" data-placement="top" title="Editar" name="editar" href="./informe_paciente.php?id=<?php echo $row['id_paciente'] ?>"> <i class="fas fa-edit"></i> </a> </td>
+
 
 
                               <td> <a class="button text-danger" data-toggle="tooltip" data-placement="top" title="Anular" name="anular" href="../crud/realizar_consultasUPDATE.php?accion=DLT&id=<?php echo $row['id_cita']  ?>&estado=<?php echo $row['estado'] ?>" onclick="return confirmation() "> <i class=" fas fa-trash"> </i> </a> </td>

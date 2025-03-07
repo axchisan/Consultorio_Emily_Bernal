@@ -41,6 +41,8 @@ if (isset($_SESSION['id_paciente'])) {
      <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
      <script src="./src/js/Datepicker.js">
      </script>
+     <!-- recaptcha-->
+     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 
 <body id="top" data-spy="scroll" data-target=".navbar-collapse" data-offset="50">
@@ -289,7 +291,6 @@ if (isset($_SESSION['id_paciente'])) {
      <section id="appointment" data-stellar-background-ratio="3">
           <div class="container">
                <div class="row">
-
                     <div class="col-md-6 col-sm-6">
                          <img src="src/img/appointment-image.jpg" class="img-responsive" alt="">
                     </div>
@@ -297,7 +298,6 @@ if (isset($_SESSION['id_paciente'])) {
                     <div class="col-md-6 col-sm-6">
                          <!-- CONTACT FORM HERE -->
                          <form action="./crud/cita_INSERT.php?opciones=INS" method="POST" enctype="multipart/form-data" autocomplete="off" id="appointment-form">
-
                               <!-- SECTION TITLE -->
                               <div class="section-title wow fadeInUp" data-wow-delay="0.4s">
                                    <h2>Realizar una Cita</h2>
@@ -306,60 +306,69 @@ if (isset($_SESSION['id_paciente'])) {
                               <div class="wow fadeInUp" data-wow-delay="0.8s">
                                    <div class="col-md-6 col-sm-6">
                                         <label for="name">Nombre</label>
-                                        <input type="text" class="form-control" id="name" name="name" placeholder="Nombre " require value=" <?php echo $row['nombre']; ?>">
+                                        <input type="text" class="form-control" id="name" name="name" placeholder="Nombre" required value="<?php echo isset($_SESSION['FormData']['name']) ? htmlspecialchars($_SESSION['FormData']['name']) : $row['nombre']; ?>">
                                    </div>
                                    <div class="col-md-6 col-sm-6">
-                                        <label for="name">Apellido</label>
-                                        <input type="text" class="form-control" id="name" name="name" placeholder="Apellido" require value=" <?php echo $row['apellido']; ?>">
+                                        <label for="apellido">Apellido</label> <!-- Cambié el "for" a "apellido" para diferenciar -->
+                                        <input type="text" class="form-control" id="apellido" name="apellido" placeholder="Apellido" required value="<?php echo isset($_SESSION['FormData']['name']) ? htmlspecialchars($_SESSION['FormData']['name']) : $row['apellido']; ?>">
                                    </div>
-
 
                                    <div class="col-md-12 col-sm-6">
                                         <label for="email">Correo Electrónico</label>
-                                        <input type="email" class="form-control" id="email" name="email" placeholder="Correo Electrónico" require value=" <?php echo $row['correo_electronico']; ?>">
+                                        <input type="email" class="form-control" id="email" name="email" placeholder="Correo Electrónico" required value="<?php echo isset($_SESSION['FormData']['email']) ? htmlspecialchars($_SESSION['FormData']['email']) : $row['correo_electronico']; ?>">
                                    </div>
 
-                                   </script>
                                    <div class="col-md-6 col-sm-6">
                                         <label for="fecha_cita">Fecha de la cita</label>
-                                        <input type="text" class="form-control" name="fecha_cita" id="fecha_cita" required>
-
+                                        <input type="text" class="form-control" name="fecha_cita" id="fecha_cita" required value="<?php echo isset($_SESSION['FormData']['fecha_cita']) ? htmlspecialchars($_SESSION['FormData']['fecha_cita']) : ''; ?>">
                                    </div>
                                    <div class="col-md-6 col-sm-6">
                                         <label for="hora">Hora de la cita</label>
-                                        <input type="time" class="form-control" min="08:00" max="19:00" name="hora" id="hora" required>
-
+                                        <input type="time" class="form-control" min="08:00" max="19:00" name="hora" id="hora" required value="<?php echo isset($_SESSION['FormData']['hora']) ? htmlspecialchars($_SESSION['FormData']['hora']) : ''; ?>">
                                    </div>
+
                                    <div class="col-md-6 col-sm-6">
-                                        <label for="consultas">Consultas</label> <br>
-                                        <select name="consultas" id="consultas" require>
-                                             <?php while ($row1 = mysqli_fetch_array($resultado, MYSQLI_ASSOC)) {
-                                                  echo "<option value = " . $row1['id_consultas'] . ">" . $row1['tipo'] . "</option>";
-                                             }   ?>
+                                        <label for="consultas">Consultas</label><br>
+                                        <select name="consultas" id="consultas" required>
+                                             <?php while ($row1 = mysqli_fetch_array($resultado, MYSQLI_ASSOC)) { ?>
+                                                  <option value="<?php echo $row1['id_consultas']; ?>" <?php echo isset($_SESSION['FormData']['consultas']) && $_SESSION['FormData']['consultas'] == $row1['id_consultas'] ? 'selected' : ''; ?>>
+                                                       <?php echo $row1['tipo']; ?>
+                                                  </option>
+                                             <?php } ?>
                                         </select>
                                    </div>
 
                                    <div class="col-md-6 col-sm-6">
-                                        <label for="dentistas">Dentistas</label> <br>
-                                        <select name="dentistas" id="dentistas" require>
-                                             <?php while ($row2 = mysqli_fetch_array($resultadoDentistas, MYSQLI_ASSOC)) {
-                                                  echo "<option value = " . $row2['id_doctor'] . ">" . $row2['nombreD'] . "</option>";
-                                             }   ?>
+                                        <label for="dentistas">Dentistas</label><br>
+                                        <select name="dentistas" id="dentistas" required>
+                                             <?php while ($row2 = mysqli_fetch_array($resultadoDentistas, MYSQLI_ASSOC)) { ?>
+                                                  <option value="<?php echo $row2['id_doctor']; ?>" <?php echo isset($_SESSION['FormData']['dentistas']) && $_SESSION['FormData']['dentistas'] == $row2['id_doctor'] ? 'selected' : ''; ?>>
+                                                       <?php echo $row2['nombreD']; ?>
+                                                  </option>
+                                             <?php } ?>
                                         </select>
                                    </div>
 
                                    <div class="col-md-12 col-sm-12">
-                                        <br> <label for="phone">Teléfono</label>
-                                        <input type="tel" class="form-control" id="phone" name="phone" placeholder="Teléfono" required value=" <?php echo $row['telefono']; ?>">
+                                        <br><label for="phone">Teléfono</label>
+                                        <input type="tel" class="form-control" id="phone" name="phone" placeholder="Teléfono" required value="<?php echo isset($_SESSION['FormData']['phone']) ? htmlspecialchars($_SESSION['FormData']['phone']) : $row['telefono']; ?>">
                                    </div>
+
                                    <div class="col-md-12 col-sm-12">
-                                        <br> <button type="submit" name="enviar" value="enviar" class="form-control" id="cf-submit">Enviar</button>
+                                        <div class="g-recaptcha" data-sitekey="6LezIuwqAAAAABE2_UWVOaHe9DamIwxKhyXLffyO"></div>
+                                        <?php if (isset($_SESSION['CaptchaError'])) { ?>
+                                             <p style="color: red; margin-top: 10px;"><?php echo $_SESSION['CaptchaError']; ?></p>
+                                             <?php unset($_SESSION['CaptchaError']); // Limpiar el mensaje tras mostrarlo 
+                                             ?>
+                                        <?php } ?>
+                                   </div>
+
+                                   <div class="col-md-12 col-sm-12">
+                                        <br><button type="submit" name="enviar" value="enviar" class="form-control" id="cf-submit">Enviar</button>
                                    </div>
                               </div>
                          </form>
-
                     </div>
-
                </div>
           </div>
      </section>
@@ -373,7 +382,7 @@ if (isset($_SESSION['id_paciente'])) {
                               <div class="card">
                                    <div class="card-body">
                                         <div class="d-flex flex-column align-items-center text-center">
-                                        <?php
+                                             <?php
                                              if ($row['sexo'] == 'Masculino') {
                                              ?>
                                                   <img src="./src/img/iconoH.jpg" class="rounded-circle" width="150">
