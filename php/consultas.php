@@ -128,6 +128,7 @@ function MostrarCitas($link, $id)
 {
     $query = "SELECT  
                     c.id_cita,
+                    p.id_paciente, 
 	                p.nombre,
 	                p.apellido,
 	                d.nombreD,
@@ -146,8 +147,7 @@ function MostrarCitas($link, $id)
             LEFT JOIN `consultas` as con ON  con.id_consultas  =  c.id_consultas
             LEFT JOIN `paciente_diagnostico` as pd ON  pd.id_cita  =  c.id_cita
             WHERE d.id_doctor = $id
-          ;
-            ;";
+          ;";
     $resultado = mysqli_query($link, $query);
     return $resultado;
 }

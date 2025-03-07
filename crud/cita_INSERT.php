@@ -74,6 +74,7 @@ try {
                 // Cerrar la consulta y la conexión
                 mysqli_stmt_close($stmt);
                 mysqli_close($link);
+
             }
             break;
 
