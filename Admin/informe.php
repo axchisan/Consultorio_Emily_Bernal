@@ -124,10 +124,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_medical'])) {
                                  evolucion = '$evolucion', 
                                  diagnostico = '$diagnostico', 
                                  plan_tratamiento = '$plan_tratamiento', 
-                                 costo = '$costo'" . 
-                                 ($radiografia ? ", radiografia = '$radiografia'" : "") . 
-                                 ($foto_boca ? ", foto_boca = '$foto_boca'" : "") . 
-                                 " WHERE id_cita = '{$appointment['id_cita']}'";
+                                 costo = '$costo'" .
+            ($radiografia ? ", radiografia = '$radiografia'" : "") .
+            ($foto_boca ? ", foto_boca = '$foto_boca'" : "") .
+            " WHERE id_cita = '{$appointment['id_cita']}'";
         mysqli_query($link, $update_medical_query);
     } else {
         // Insertar nuevo registro
@@ -150,6 +150,7 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -160,8 +161,9 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
     <link rel="stylesheet" href="../src/css/lib/fontawesome/css/all.css">
     <!-- Estilos Personalizados -->
     <link rel="stylesheet" href="../src/css/admin.css">
-    <link rel="stylesheet" href="../src/css/informe_paciente.css"> 
+    <link rel="stylesheet" href="../src/css/informe_paciente.css">
 </head>
+
 <body>
     <aside class="sidebar">
         <!-- Contenido de la barra lateral -->
@@ -227,14 +229,14 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
                                 <div class="card-body patient-info">
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <h5>Datos No Editables</h5>
+                                            <h5>Datos Principales</h5>
                                             <p><strong>Nombre:</strong> <?php echo $patient['nombre'] . ' ' . $patient['apellido']; ?></p>
                                             <p><strong>Edad:</strong> <?php echo $age; ?> años</p>
                                             <p><strong>Fecha de Nacimiento:</strong> <?php echo $patient['fecha_nacimiento']; ?></p>
                                             <p><strong>Correo Electrónico:</strong> <?php echo $patient['correo_electronico']; ?></p>
                                         </div>
                                         <div class="col-md-6">
-                                            <h5>Datos Editables</h5>
+                                            <h5>Datos Médicos</h5>
                                             <form method="POST" action="">
                                                 <div class="form-group">
                                                     <label for="telefono">Teléfono:</label>
@@ -333,20 +335,39 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
                                             <label for="examen_atm">Examen ATM:</label>
                                             <textarea class="form-control" id="examen_atm" name="examen_atm"><?php echo $medical_report['examen_atm'] ?? ''; ?></textarea>
                                         </div>
-                                        <div class="form-group">
+
+                                        <!-- Sección de Radiografía -->
+                                        <div class="form-group custom-file-upload">
                                             <label for="radiografia">Radiografía:</label>
-                                            <input type="file" class="form-control-file" id="radiografia" name="radiografia">
+                                            <div class="file-upload-wrapper">
+                                                <input type="file" class="custom-file-input" id="radiografia" name="radiografia" accept="image/*">
+                                                <span class="file-upload-text">Selecciona una radiografía...</span>
+                                                <button type="button" class="file-upload-btn"><i class="fas fa-upload"></i> Subir</button>
+                                            </div>
                                             <?php if (isset($medical_report['radiografia']) && $medical_report['radiografia']) { ?>
-                                                <img src="../uploads/radiografias/<?php echo $medical_report['radiografia']; ?>" class="uploaded-image" alt="Radiografía">
+                                                <div class="image-preview">
+                                                    <img src="../uploads/radiografias/<?php echo $medical_report['radiografia']; ?>" class="uploaded-image" alt="Radiografía">
+                                                    <button type="button" class="remove-image" data-type="radiografia"><i class="fas fa-trash-alt"></i> Eliminar</button>
+                                                </div>
                                             <?php } ?>
                                         </div>
-                                        <div class="form-group">
+
+                                        <!-- Sección de Foto de la Boca -->
+                                        <div class="form-group custom-file-upload">
                                             <label for="foto_boca">Foto de la Boca:</label>
-                                            <input type="file" class="form-control-file" id="foto_boca" name="foto_boca">
+                                            <div class="file-upload-wrapper">
+                                                <input type="file" class="custom-file-input" id="foto_boca" name="foto_boca" accept="image/*">
+                                                <span class="file-upload-text">Selecciona una foto de la boca...</span>
+                                                <button type="button" class="file-upload-btn"><i class="fas fa-upload"></i> Subir</button>
+                                            </div>
                                             <?php if (isset($medical_report['foto_boca']) && $medical_report['foto_boca']) { ?>
-                                                <img src="../uploads/fotos_boca/<?php echo $medical_report['foto_boca']; ?>" class="uploaded-image" alt="Foto de la Boca">
+                                                <div class="image-preview">
+                                                    <img src="../uploads/fotos_boca/<?php echo $medical_report['foto_boca']; ?>" class="uploaded-image" alt="Foto de la Boca">
+                                                    <button type="button" class="remove-image" data-type="foto_boca"><i class="fas fa-trash-alt"></i> Eliminar</button>
+                                                </div>
                                             <?php } ?>
                                         </div>
+
                                         <div class="form-group">
                                             <label for="evolucion">Evolución:</label>
                                             <textarea class="form-control" id="evolucion" name="evolucion"><?php echo $medical_report['evolucion'] ?? ''; ?></textarea>
@@ -363,12 +384,21 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
                                             <label for="costo">Costo:</label>
                                             <input type="number" class="form-control" id="costo" name="costo" value="<?php echo $medical_report['costo'] ?? ''; ?>">
                                         </div>
-                                        <button type="submit" name="update_medical" class="btn btn-primary">Guardar Informe Médico</button>
-                                    </form>
-                                    <form action="generate_informe_pdf.php" method="post">
-                                        <input type="hidden" name="patient_id" value="<?php echo $patient_id; ?>">
-                                        <button type="submit" class="btn btn-success">Guardar Informe en PDF</button>
-                                    </form>
+
+                                        <div class="button-container">
+                                            <form method="POST" action="" enctype="multipart/form-data">
+                                                <!-- ... (otros campos del formulario) ... -->
+                                                <button type="submit" name="update_medical" class="btn btn-custom-primary">
+                                                    <i class="fas fa-save"></i> Guardar Informe Médico
+                                                </button>
+                                            </form>
+                                            <form action="generate_informe_pdf.php" method="post">
+                                                <input type="hidden" name="patient_id" value="<?php echo $patient_id; ?>">
+                                                <button type="submit" class="btn btn-custom-secondary">
+                                                    <i class="fas fa-file-pdf"></i> Guardar Informe en PDF
+                                                </button>
+                                            </form>
+                                        </div>
                                 </div>
                             </div>
                         </div>
@@ -382,15 +412,60 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
     <script src="../src/js/jquery.js"></script>
     <script src="../src/css/lib/bootstrap/js/bootstrap.min.js"></script>
     <script src="../src/js/admin.js"></script>
+
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Cerrar alertas
             (document.querySelectorAll('.alert .delete') || []).forEach(($delete) => {
                 const $notification = $delete.parentNode;
                 $delete.addEventListener('click', () => {
                     $notification.parentNode.removeChild($notification);
                 });
             });
+
+            // Mostrar el nombre del archivo seleccionado
+            document.querySelectorAll('.custom-file-input').forEach(input => {
+                input.addEventListener('change', function() {
+                    const fileName = this.files[0]?.name || 'Selecciona un archivo...';
+                    this.parentElement.querySelector('.file-upload-text').textContent = fileName;
+                });
+            });
+
+            // Eliminar imágenes con AJAX
+            document.querySelectorAll('.remove-image').forEach(button => {
+                button.addEventListener('click', function() {
+                    const imagePreview = this.parentElement;
+                    const type = this.getAttribute('data-type');
+                    const fileName = imagePreview.querySelector('img').src.split('/').pop();
+                    const idCita = <?php echo json_encode($appointment['id_cita']); ?>;
+
+                    if (confirm('¿Estás seguro de que deseas eliminar esta imagen?')) {
+                        fetch('delete_image.php', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                },
+                                body: `type=${type}&file_name=${fileName}&id_cita=${idCita}`
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    imagePreview.remove();
+                                    alert(data.message);
+                                } else {
+                                    alert(data.message);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Ocurrió un error al eliminar la imagen');
+                            });
+                    }
+                });
+            });
         });
     </script>
 </body>
+
 </html>

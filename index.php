@@ -2,6 +2,13 @@
 include_once('./php/conexionDB.php');
 include_once('./php/consultas.php');
 
+//si esta logueado manda al principal
+if (isset($_SESSION['id_paciente'])) {
+    $vUsuario = $_SESSION['id_paciente'];
+    $row = consultarPaciente($link, $vUsuario);
+    header("Location: ./principal.php");
+} 
+
 // Limpiar mensajes de sesión si no hay intento de login
 if (!isset($_POST['ingresar'])) {
     $_SESSION['MensajeTexto'] = null;

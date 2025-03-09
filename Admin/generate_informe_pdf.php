@@ -57,6 +57,11 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
 
 require_once __DIR__ . '/../Reportes/fpdf/fpdf.php';
 
+// Configurar FPDF para manejar caracteres especiales (ñ, tildes)
+define('EURO', chr(128));
+define('EURO_T', chr(129));
+
+// Clase personalizada de FPDF
 class PDF extends FPDF
 {
     function Header()
@@ -65,8 +70,8 @@ class PDF extends FPDF
             $this->Image(__DIR__ . '/../src/img/logo.png', 10, 10, 25);
         }
         $this->SetFont('Arial', 'B', 18);
-        $this->Cell(0, 15, 'Informe Medico', 0, 1, 'C');
-        $this->Line(10, 35, 200, 35);
+        $this->Cell(0, 15, utf8_decode('Informe Médico'), 0, 1, 'C');
+        $this->Line(10, 35, 200, 35); // Línea separadora
         $this->Ln(10);
     }
 
@@ -74,85 +79,129 @@ class PDF extends FPDF
     {
         $this->SetY(-20);
         $this->SetFont('Arial', 'I', 8);
-        $this->Cell(0, 10, 'Fecha de generacion: ' . date("d/m/Y H:i"), 0, 0, 'L');
-        $this->Cell(0, 10, 'Pagina ' . $this->PageNo() . '/{nb}', 0, 0, 'R');
+        $this->Cell(0, 10, 'Fecha de generación: ' . date("d/m/Y H:i"), 0, 0, 'L');
+        $this->Cell(0, 10, 'Página ' . $this->PageNo() . '/{nb}', 0, 0, 'R');
     }
 
     function DatosPaciente($patient, $age)
     {
         $this->SetFont('Arial', 'B', 12);
-        $this->Cell(0, 10, "Informacion del Paciente", 0, 1, 'L');
+        $this->Cell(0, 10, utf8_decode("Información del Paciente"), 0, 1, 'L');
+        $this->Ln(5);
+
         $this->SetFont('Arial', '', 10);
-        $this->Cell(40, 7, "Nombre:", 0, 0, 'L');
+        $this->Cell(40, 7, utf8_decode("Nombre:"), 0, 0, 'L');
         $this->Cell(60, 7, utf8_decode($patient['nombre'] . ' ' . $patient['apellido']), 0, 1, 'L');
-        $this->Cell(40, 7, "Edad:", 0, 0, 'L');
-        $this->Cell(60, 7, $age . ($age !== 'N/A' ? ' anos' : ''), 0, 1, 'L');
-        $this->Cell(40, 7, "Fecha de Nacimiento:", 0, 0, 'L');
+        $this->Cell(40, 7, utf8_decode("Edad:"), 0, 0, 'L');
+        $this->Cell(60, 7, $age . ($age !== 'N/A' ? ' años' : ''), 0, 1, 'L');
+        $this->Cell(40, 7, utf8_decode("Fecha de Nacimiento:"), 0, 0, 'L');
         $this->Cell(60, 7, $patient['fecha_nacimiento'], 0, 1, 'L');
-        $this->Cell(40, 7, "Telefono:", 0, 0, 'L');
-        $this->Cell(60, 7, $patient['telefono'] ?? 'N/A', 0, 1, 'L');
-        $this->Cell(40, 7, "Correo Electronico:", 0, 0, 'L');
+        $this->Cell(40, 7, utf8_decode("Correo Electrónico:"), 0, 0, 'L');
         $this->Cell(60, 7, $patient['correo_electronico'], 0, 1, 'L');
+        $this->Cell(40, 7, utf8_decode("Teléfono:"), 0, 0, 'L');
+        $this->Cell(60, 7, $patient['telefono'] ?? 'N/A', 0, 1, 'L');
+        $this->Cell(40, 7, utf8_decode("EPS:"), 0, 0, 'L');
+        $this->Cell(60, 7, $patient['eps'] ?? 'N/A', 0, 1, 'L');
+        $this->Cell(40, 7, utf8_decode("Ocupación:"), 0, 0, 'L');
+        $this->Cell(60, 7, $patient['ocupacion'] ?? 'N/A', 0, 1, 'L');
+        $this->Cell(40, 7, utf8_decode("Estado Civil:"), 0, 0, 'L');
+        $this->Cell(60, 7, $patient['estado_civil'] ?? 'N/A', 0, 1, 'L');
+        $this->Cell(40, 7, utf8_decode("Cédula:"), 0, 0, 'L');
+        $this->Cell(60, 7, $patient['cedula'] ?? 'N/A', 0, 1, 'L');
+        $this->Cell(40, 7, utf8_decode("Género:"), 0, 0, 'L');
+        $this->Cell(60, 7, $patient['sexo'] ?? 'N/A', 0, 1, 'L');
+        $this->Cell(40, 7, utf8_decode("Emergencia (Nombre):"), 0, 0, 'L');
+        $this->Cell(60, 7, $patient['emergencia_nombre'] ?? 'N/A', 0, 1, 'L');
+        $this->Cell(40, 7, utf8_decode("Teléfono de Emergencia:"), 0, 0, 'L');
+        $this->Cell(60, 7, $patient['emergencia_telefono'] ?? 'N/A', 0, 1, 'L');
+        if ($age !== 'N/A' && $age < 18) {
+            $this->Cell(40, 7, utf8_decode("Acompañante (Nombre):"), 0, 0, 'L');
+            $this->Cell(60, 7, $patient['menor_acompanante'] ?? 'N/A', 0, 1, 'L');
+            $this->Cell(40, 7, utf8_decode("Parentesco:"), 0, 0, 'L');
+            $this->Cell(60, 7, $patient['menor_parentesco'] ?? 'N/A', 0, 1, 'L');
+            $this->Cell(40, 7, utf8_decode("Teléfono Acompañante:"), 0, 0, 'L');
+            $this->Cell(60, 7, $patient['menor_telefono'] ?? 'N/A', 0, 1, 'L');
+        }
+        $this->Cell(40, 7, utf8_decode("Tipo de Sangre:"), 0, 0, 'L');
+        $this->Cell(60, 7, $patient['tipo_sangre'] ?? 'N/A', 0, 1, 'L');
+        $this->Cell(40, 7, utf8_decode("Alertas Médicas:"), 0, 0, 'L');
+        $this->MultiCell(150, 7, utf8_decode($patient['alertas_medicas'] ?? 'N/A'), 0, 'L');
         $this->Ln(5);
     }
 
     function InformeCita($appointment, $medical_report)
     {
         $this->SetFont('Arial', 'B', 12);
-        $this->Cell(0, 10, "Informacion de la Cita", 0, 1, 'L');
+        $this->Cell(0, 10, utf8_decode("Información de la Cita"), 0, 1, 'L');
+        $this->Ln(5);
+
         $this->SetFont('Arial', '', 10);
-        $this->Cell(40, 7, "Fecha:", 0, 0, 'L');
+        $this->Cell(40, 7, utf8_decode("Fecha:"), 0, 0, 'L');
         $this->Cell(60, 7, $appointment['fecha_cita'], 0, 1, 'L');
-        $this->Cell(40, 7, "Hora:", 0, 0, 'L');
+        $this->Cell(40, 7, utf8_decode("Hora:"), 0, 0, 'L');
         $this->Cell(60, 7, $appointment['hora_cita'], 0, 1, 'L');
-        $this->Cell(40, 7, "Doctor:", 0, 0, 'L');
+        $this->Cell(40, 7, utf8_decode("Doctor:"), 0, 0, 'L');
         $this->Cell(60, 7, utf8_decode($appointment['nombreD']), 0, 1, 'L');
-        $this->Cell(40, 7, "Motivo de Consulta:", 0, 0, 'L');
+        $this->Cell(40, 7, utf8_decode("Motivo de Consulta:"), 0, 0, 'L');
         $this->Cell(60, 7, utf8_decode($appointment['tipo']), 0, 1, 'L');
-        $this->Cell(40, 7, "Estado:", 0, 0, 'L');
+        $this->Cell(40, 7, utf8_decode("Estado:"), 0, 0, 'L');
         $this->Cell(60, 7, $appointment['estado'] == 'A' ? 'Realizada' : 'Pendiente', 0, 1, 'L');
         $this->Ln(5);
 
         $this->SetFont('Arial', 'B', 12);
-        $this->Cell(0, 10, "Informe Medico", 0, 1, 'L');
-        $this->SetFont('Arial', '', 10);
+        $this->Cell(0, 10, utf8_decode("Informe Médico"), 0, 1, 'L');
+        $this->Ln(5);
 
-        // Manejar textos largos con MultiCell
-        $this->Cell(40, 7, "Examen Intraoral:", 0, 0, 'L');
+        $this->SetFont('Arial', '', 10);
+        $this->Cell(40, 7, utf8_decode("Examen Intraoral:"), 0, 0, 'L');
         $this->MultiCell(150, 7, utf8_decode($medical_report['examen_intraoral'] ?? 'N/A'), 0, 'L');
         $this->Ln(2);
 
-        $this->Cell(40, 7, "Examen Extraoral:", 0, 0, 'L');
+        $this->Cell(40, 7, utf8_decode("Examen Extraoral:"), 0, 0, 'L');
         $this->MultiCell(150, 7, utf8_decode($medical_report['examen_extraoral'] ?? 'N/A'), 0, 'L');
         $this->Ln(2);
 
-        $this->Cell(40, 7, "Examen ATM:", 0, 0, 'L');
+        $this->Cell(40, 7, utf8_decode("Examen ATM:"), 0, 0, 'L');
         $this->MultiCell(150, 7, utf8_decode($medical_report['examen_atm'] ?? 'N/A'), 0, 'L');
         $this->Ln(2);
 
-        $this->Cell(40, 7, "Evolucion:", 0, 0, 'L');
+        // Agregar imágenes si existen
+        if (isset($medical_report['radiografia']) && !empty($medical_report['radiografia']) && file_exists(__DIR__ . '/../uploads/radiografias/' . $medical_report['radiografia'])) {
+            $this->Cell(40, 7, utf8_decode("Radiografía:"), 0, 0, 'L');
+            $this->Image(__DIR__ . '/../uploads/radiografias/' . $medical_report['radiografia'], 50, $this->GetY(), 100); // Ajusta tamaño y posición
+            $this->Ln(80); // Espacio después de la imagen
+        }
+
+        if (isset($medical_report['foto_boca']) && !empty($medical_report['foto_boca']) && file_exists(__DIR__ . '/../uploads/fotos_boca/' . $medical_report['foto_boca'])) {
+            $this->Cell(40, 7, utf8_decode("Foto de la Boca:"), 0, 0, 'L');
+            $this->Image(__DIR__ . '/../uploads/fotos_boca/' . $medical_report['foto_boca'], 50, $this->GetY(), 100); // Ajusta tamaño y posición
+            $this->Ln(80); // Espacio después de la imagen
+        }
+
+        $this->Cell(40, 7, utf8_decode("Evolución:"), 0, 0, 'L');
         $this->MultiCell(150, 7, utf8_decode($medical_report['evolucion'] ?? 'N/A'), 0, 'L');
         $this->Ln(2);
 
-        $this->Cell(40, 7, "Diagnostico:", 0, 0, 'L');
+        $this->Cell(40, 7, utf8_decode("Diagnóstico:"), 0, 0, 'L');
         $this->MultiCell(150, 7, utf8_decode($medical_report['diagnostico'] ?? 'N/A'), 0, 'L');
         $this->Ln(2);
 
-        $this->Cell(40, 7, "Plan de Tratamiento:", 0, 0, 'L');
+        $this->Cell(40, 7, utf8_decode("Plan de Tratamiento:"), 0, 0, 'L');
         $this->MultiCell(150, 7, utf8_decode($medical_report['plan_tratamiento'] ?? 'N/A'), 0, 'L');
         $this->Ln(2);
 
-        $this->Cell(40, 7, "Costo:", 0, 0, 'L');
+        $this->Cell(40, 7, utf8_decode("Costo:"), 0, 0, 'L');
         $this->Cell(60, 7, '$' . ($medical_report['costo'] ?? 'N/A'), 0, 1, 'L');
     }
 }
 
 $pdf = new PDF();
 $pdf->AliasNbPages();
-$pdf->AddPage();
+$pdf->AddPage('P', 'A4'); // Orientación vertical, tamaño A4
 $pdf->DatosPaciente($patient, $age);
 $pdf->InformeCita($appointment, $medical_report);
 
+// Limpiar buffer de salida
 if (ob_get_length()) {
     ob_end_clean();
 }
