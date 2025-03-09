@@ -1,6 +1,6 @@
 /* Colores personalizados */
 :root {
-    --primary-purple: #6B46C1; /* Morado principal */
+    --primary-purple: #6a1b9a; /* Morado principal */
     --secondary-purple: #9F7AEA; /* Morado secundario */
     --light-gray: #F8F9FA; /* Gris claro para fondos */
     --dark-gray: #333333; /* Gris oscuro para texto */
@@ -95,12 +95,103 @@
     margin-right: 8px;
 }
 
-/* Imágenes subidas */
+/* Estilos para la carga de archivos */
+.custom-file-upload {
+    margin-bottom: 1.5rem;
+}
+
+.custom-file-upload label {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.file-upload-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: 2px dashed #d1d1d1;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    transition: all 0.3s ease;
+}
+
+.file-upload-wrapper:hover {
+    border-color: #007bff;
+    background-color: #f0f8ff;
+}
+
+.custom-file-input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.file-upload-text {
+    flex-grow: 1;
+    color: #666;
+    font-size: 0.9rem;
+    margin-left: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-upload-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.file-upload-btn:hover {
+    background-color: #0056b3;
+}
+
+/* Estilos para la vista previa de la imagen */
+.image-preview {
+    margin-top: 10px;
+    position: relative;
+    display: inline-block;
+}
+
 .uploaded-image {
     max-width: 200px;
+    max-height: 200px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    object-fit: cover;
     margin-top: 10px;
+}
+
+.remove-image {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 5px 10px;
     border-radius: 5px;
-    border: 1px solid #E9ECEF;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.remove-image:hover {
+    background-color: #c82333;
 }
 
 /* Alertas */
@@ -114,6 +205,63 @@
     font-size: 1.2rem;
 }
 
+/* Contenedor de botones */
+.button-container {
+    display: flex;
+    gap: 15px; /* Espacio entre botones */
+    margin-top: 20px;
+    justify-content: flex-start;
+}
+
+/* Botones personalizados */
+.btn-custom-primary {
+    background-color: var(--primary-purple);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-custom-primary:hover {
+    background-color: #7A1F8D; /* Morado más oscuro */
+    transform: translateY(-2px); /* Efecto de elevación */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-custom-secondary {
+    background-color: var(--secondary-purple);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-custom-secondary:hover {
+    background-color: #8A4AF3; /* Morado más oscuro */
+    transform: translateY(-2px); /* Efecto de elevación */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Íconos en botones */
+.btn-custom-primary i,
+.btn-custom-secondary i {
+    font-size: 1rem;
+}
+
 /* Responsividad */
 @media (max-width: 768px) {
     .card-body .row {
@@ -121,5 +269,13 @@
     }
     .col-md-6 {
         width: 100%;
+    }
+    .button-container {
+        flex-direction: column;
+        gap: 10px; /* Menor espacio en mobile */
+    }
+    .btn-custom-primary,
+    .btn-custom-secondary {
+        width: 100%; /* Botones de ancho completo en mobile */
     }
 }
