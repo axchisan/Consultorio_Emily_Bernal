@@ -1,13 +1,21 @@
 <?php
+session_start(); // Asegurar que la sesión esté iniciada al principio
 include_once('./php/conexionDB.php');
 include_once('./php/consultas.php');
 
-//si esta logueado manda al principal
-if (isset($_SESSION['id_paciente'])) {
-    $vUsuario = $_SESSION['id_paciente'];
-    $row = consultarPaciente($link, $vUsuario);
-    header("Location: ./principal.php");
-} 
+// Verificar si el usuario ya está logueado
+if (isset($_SESSION['id_paciente']) || isset($_SESSION['id_doctor'])) {
+    // Si es un paciente, redirigir a principal.php
+    if (isset($_SESSION['id_paciente'])) {
+        header("Location: ./principal.php");
+        exit();
+    }
+    // Si es un doctor, redirigir a inicioAdmin.php
+    if (isset($_SESSION['id_doctor'])) {
+        header("Location: ./Admin/inicioAdmin.php");
+        exit();
+    }
+}
 
 // Limpiar mensajes de sesión si no hay intento de login
 if (!isset($_POST['ingresar'])) {
@@ -26,13 +34,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ingresar'])) {
         $_SESSION['MensajeTexto'] = "Por favor, complete todos los campos.";
         $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
     } else {
-        //echo "<br>  Hola " . $vUsuario . "-" . $vClave;
         validarLogin($link, $vUsuario, $vClave, $vTipo);
     }
 }
 ?>
-<!DOCTYPE html>
-<html>
 
 <head>
     <meta charset="UTF-8" />

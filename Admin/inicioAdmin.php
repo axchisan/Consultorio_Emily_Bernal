@@ -1,17 +1,34 @@
 <?php
+session_start(); // Asegurar que la sesión esté iniciada
 include_once('../php/conexionDB.php');
 include_once('../php/consultas.php');
 
-if (isset($_SESSION['id_doctor'])) {
-    $vUsuario = $_SESSION['id_doctor'];
-    $row = consultarDoctor($link, $vUsuario);
-    $resultadoCitas = MostrarCitas($link, $vUsuario); // mostrar citas
-} else {
-    $_SESSION['MensajeTexto'] = "Error acceso al sistema no registrado.";
+// Validar la sesión y el token
+if (!isset($_SESSION['id_doctor']) || !isset($_SESSION['session_token'])) {
+    $_SESSION['MensajeTexto'] = "Error acceso al sistema: Sesión no iniciada.";
     $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
-    header("Location: ./index.php");
+    header("Location: ../index.php");
+    exit();
 }
+
+$vUsuario = $_SESSION['id_doctor'];
+
+// Validar el token contra la base de datos
+if (!validarToken($link, $vUsuario, 'Doctor', $_SESSION['session_token'])) {
+    // Si el token no coincide, cerrar la sesión
+    session_unset();
+    session_destroy();
+    $_SESSION['MensajeTexto'] = "Tu sesión ha sido cerrada por inicio en otro dispositivo.";
+    $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
+    header("Location: ../index.php");
+    exit();
+}
+
+// Si el token es válido, continuar con la lógica existente
+$row = consultarDoctor($link, $vUsuario);
+$resultadoCitas = MostrarCitas($link, $vUsuario); // mostrar citas
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 
@@ -27,6 +44,8 @@ if (isset($_SESSION['id_doctor'])) {
 
     <!-- Style -->
     <link rel="stylesheet" href="../src/css/admin.css">
+    <link rel="stylesheet" href="../src/css/custom_styles.css">
+
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="../src/css/lib/fontawesome/css/all.css">
@@ -104,11 +123,11 @@ if (isset($_SESSION['id_doctor'])) {
                                                         <?php echo $_SESSION['MensajeTexto'] ?>
                                                         <button class="delete"><i class="fa fa-times"></i></button>
                                                     </div>
-                                                    <?php
+                                                <?php
                                                     $_SESSION['MensajeTexto'] = null;
                                                     $_SESSION['MensajeTipo'] = null;
-                                                    }
-                                                    ?>
+                                                }
+                                                ?>
                                             </div>
                                             <table id="example" class="table table-striped nowrap responsive">
                                                 <thead>

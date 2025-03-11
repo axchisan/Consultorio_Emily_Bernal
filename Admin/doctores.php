@@ -23,6 +23,8 @@ if (isset($_SESSION['id_doctor'])) {
 
     <!-- Style -->
     <link rel="stylesheet" href="../src/css/admin.css">
+    <link rel="stylesheet" href="../src/css/custom_styles.css">
+
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="../src/css/lib/fontawesome/css/all.css">

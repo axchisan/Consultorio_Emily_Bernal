@@ -4,12 +4,26 @@ include_once('./php/consultas.php');
 $resultado = MostrarConsultas($link); //mostrar las consultas
 $resultadoDentistas = MostrarDentistas($link); //mostrar dentistas
 
-if (isset($_SESSION['id_paciente'])) {
-     $vUsuario = $_SESSION['id_paciente'];
-     $row = consultarPaciente($link, $vUsuario);
-} else {
-     header("Location: ./index.php");
+// Validar la sesión y el token
+if (!isset($_SESSION['id_paciente']) || !isset($_SESSION['session_token'])) {
+    header("Location: ./index.php");
+    exit();
 }
+
+$vUsuario = $_SESSION['id_paciente'];
+$row = consultarPaciente($link, $vUsuario);
+
+// Validar el token contra la base de datos
+if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
+    // Si el token no coincide, cerrar la sesión
+    session_unset();
+    session_destroy();
+    $_SESSION['MensajeTexto'] = "Tu sesión ha sido cerrada por inicio en otro dispositivo.";
+    $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
+    header("Location: ./index.php");
+    exit();
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
