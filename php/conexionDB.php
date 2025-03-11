@@ -7,16 +7,18 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Crear objeto de conexión a la base de datos
-$link = new mysqli(host, user, password, database);
+$link = new mysqli(host, user, password, database, port);
+
+// Configurar SSL (necesario para Aiven)
+$link->ssl_set(null, null, null, null, null);
 
 // Verificar si hay un error en la conexión
 if ($link->connect_errno) {
     $_SESSION['MensajeTexto'] = "El sistema está en mantenimiento, intente más tarde.";
     $_SESSION['MensajeTipo'] = "bg-warning text-dark";
-    
-    // Mostrar error detallado en desarrollo (quitar en producción)
+    die("Error de conexión: " . $link->connect_error);
 }
 
 // Establecer el conjunto de caracteres a UTF-8
-$link->set_charset("utf8");
+$link->set_charset("utf8mb4"); // Cambiamos a utf8mb4 para que coincida con Aiven
 ?>
