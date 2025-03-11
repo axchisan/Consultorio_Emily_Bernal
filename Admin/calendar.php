@@ -31,6 +31,8 @@ if (isset($_SESSION['id_doctor'])) {
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
 	<!-- <link rel="stylesheet" href="css/styles.css"> -->
 	<link rel='stylesheet' type='text/css' href='../src/css/fullcalendar.css' />
+    <link rel="stylesheet" href="../src/css/custom_styles.css">
+
 	<script src="https://code.jquery.com/jquery-3.2.1.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>

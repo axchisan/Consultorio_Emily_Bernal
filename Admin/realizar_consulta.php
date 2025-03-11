@@ -28,6 +28,8 @@ if (!empty($_GET['id'])) {
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="../src/css/lib/fontawesome/css/all.css">
+    <link rel="stylesheet" href="../src/css/custom_styles.css">
+
 
     <!-- Datatable libreria -->
     <link rel="stylesheet" href="../src/js/lib/datatable\css\jquery.dataTables.min.css">
