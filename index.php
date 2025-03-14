@@ -1,16 +1,14 @@
 <?php
-session_start(); // Asegurar que la sesión esté iniciada al principio
-include_once('./php/conexionDB.php');
-include_once('./php/consultas.php');
+session_start();
+include_once './php/conexionDB.php';
+include_once './php/consultas.php';
 
-// Verificar si el usuario ya está logueado
+// Redirigir si el usuario ya está logueado
 if (isset($_SESSION['id_paciente']) || isset($_SESSION['id_doctor'])) {
-    // Si es un paciente, redirigir a principal.php
     if (isset($_SESSION['id_paciente'])) {
         header("Location: ./principal.php");
         exit();
     }
-    // Si es un doctor, redirigir a inicioAdmin.php
     if (isset($_SESSION['id_doctor'])) {
         header("Location: ./Admin/inicioAdmin.php");
         exit();
@@ -23,13 +21,12 @@ if (!isset($_POST['ingresar'])) {
     $_SESSION['MensajeTipo'] = null;
 }
 
-// Este punto luego de presionar el botón de login
+// Procesar el formulario de login
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ingresar'])) {
     $vUsuario = trim(htmlspecialchars($_POST['username'] ?? ''));
     $vClave = trim(htmlspecialchars($_POST['password'] ?? ''));
     $vTipo = trim(htmlspecialchars($_POST['tipo'] ?? ''));
 
-    // Validar que los campos no estén vacíos antes de procesar
     if (empty($vUsuario) || empty($vClave) || empty($vTipo)) {
         $_SESSION['MensajeTexto'] = "Por favor, complete todos los campos.";
         $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
@@ -39,17 +36,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ingresar'])) {
 }
 ?>
 
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <title>ODONTOLOGIA DR EMILY BERNAL</title>
-    <!-- ICONO -->
     <link rel="icon" href="./src/img/logo.png" type="image/png" />
-    <!-- Styles -->
     <link rel="stylesheet" href="src/css/login.css" />
-    <!-- Bootstrap -->
     <link href="src/css/lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css" />
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="src/css/lib/fontawesome/css/all.css">
 </head>
 
@@ -71,19 +66,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ingresar'])) {
                     </div>
 
                     <div class="form-group">
-                        <label for="password" class="font-weight-bold">Contraseña </label>
-                        <input type="password" class="form-control" name="password" id="password" placeholder="Contraseña" required value="">
+                        <label for="password" class="font-weight-bold">Contraseña</label>
+                        <input type="password" class="form-control" name="password" id="password" placeholder="Contraseña" required>
                         <button type="button" class="toggle-password" data-target="password">
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
-
                     <div class="role-selection">
                         <label class="role-option" for="Paciente">
                             <input type="radio" class="role-radio" name="tipo" id="Paciente" value="Paciente" <?php echo (isset($_POST['tipo']) && $_POST['tipo'] == 'Paciente') ? 'checked' : ''; ?>>
                             <i class="fas fa-user"></i> Paciente
                         </label>
-
                         <label class="role-option" for="Doctor">
                             <input type="radio" class="role-radio" name="tipo" id="Doctor" value="Doctor" <?php echo (isset($_POST['tipo']) && $_POST['tipo'] == 'Doctor') ? 'checked' : ''; ?>>
                             <i class="fas fa-user-md"></i> Doctor
@@ -95,7 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ingresar'])) {
                         </button>
                     </div>
 
-                    <!-- botones inicio con facebook y google -->
                     <div class="form-group social-login">
                         <button type="button" class="btn btn-google" id="google-login">
                             <i class="fab fa-google"></i>
@@ -104,9 +96,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ingresar'])) {
                             <i class="fab fa-facebook-f"></i>
                         </button>
                     </div>
+
                     <div class="form-group">
-                        <a href="registro.php"><i class="fas fa-sign-in-alt"></i> Registrarse
-                        </a>
+                        <a href="registro.php"><i class="fas fa-sign-in-alt"></i> Registrarse</a>
                     </div>
 
                     <?php if (isset($_SESSION['MensajeTexto'])) { ?>
@@ -122,19 +114,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ingresar'])) {
         </div>
     </div>
 
-    <!-- Importaciones de Supabase para autenticar con Google -->
+    <!-- Scripts -->
     <script type="module" src="./src/js/auth.js"></script>
-
-    <!-- Configurar el botón de Google -->
     <script type="module">
-        import {
-            loginWithGoogle
-        } from "./src/js/auth.js";
+        import { loginWithGoogle } from "./src/js/auth.js";
         document.getElementById("google-login").addEventListener("click", loginWithGoogle);
     </script>
 
-    <!-- lógica de opción paciente-doctor -->
+    <script src="src/js/tooglePassword.js"></script>
     <script>
+        // Selección de rol paciente/doctor
         document.querySelectorAll('.role-option').forEach(option => {
             option.addEventListener('click', function() {
                 document.querySelectorAll('.role-option').forEach(opt => opt.classList.remove('selected'));
@@ -142,25 +131,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ingresar'])) {
                 this.querySelector("input").checked = true;
             });
         });
-    </script>
 
-    <script src="src/js/tooglePassword.js"></script>
-    <script>
+        // Eliminar notificaciones al hacer clic en cerrar
         document.addEventListener('DOMContentLoaded', () => {
-            (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
+            document.querySelectorAll('.notification .delete').forEach(($delete) => {
                 const $notification = $delete.parentNode;
-                $delete.addEventListener('click', () => {
-                    $notification.parentNode.removeChild($notification);
-                });
-            });
-        });
-    </script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
-                const $notification = $delete.parentNode;
-
                 $delete.addEventListener('click', () => {
                     $notification.parentNode.removeChild($notification);
                 });
@@ -168,5 +143,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ingresar'])) {
         });
     </script>
 </body>
-
 </html>

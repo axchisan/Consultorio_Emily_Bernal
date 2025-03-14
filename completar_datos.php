@@ -1,6 +1,6 @@
 <?php
 session_start();
-include_once('php/conexionDB.php');
+include_once 'php/conexionDB.php';
 
 if (!isset($_SESSION['id_paciente']) || !isset($_SESSION['google_new_user'])) {
     header("Location: index.php");
@@ -18,11 +18,11 @@ mysqli_stmt_close($stmt);
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <title>Completar Datos - Consultorio Odontologico</title>
+    <title>Completar Datos - Consultorio Odontológico</title>
     <link rel="icon" href="./src/img/logo.png" type="image/png" />
     <link rel="stylesheet" href="src/css/login.css" />
     <link href="src/css/lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
@@ -32,7 +32,7 @@ mysqli_stmt_close($stmt);
     <div class="container login-container">
         <div class="row">
             <div class="col-md-6 ads">
-                <h1><span id="fl">Consultorio</span><span id="sl">Odontologico</span></h1>
+                <h1><span id="fl">Consultorio</span><span id="sl">Odontológico</span></h1>
             </div>
             <div class="col-md-6 login-form">
                 <div class="profile-img">
@@ -86,4 +86,5 @@ mysqli_stmt_close($stmt);
     </div>
 </body>
 </html>
+
 <?php mysqli_close($link); ?>

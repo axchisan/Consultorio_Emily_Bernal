@@ -77,7 +77,14 @@ p {
 /*---------------------------------------
      GENERAL               
   -----------------------------------------*/
-
+  .error-message {
+    color: #dc3545; 
+    font-size: 0.9em;
+    margin-top: 5px;
+    padding: 5px;
+    border-radius: 4px;
+    background-color: #f8d7da; 
+}
 html {
   -webkit-font-smoothing: antialiased;
 }
@@ -626,6 +633,22 @@ header span i {
     background: #393939;
     color: #ffffff;
   }
+   
+  /*mensajes de error del formulario*/
+  .error-message {
+    display: none; 
+    margin-top: 5px;
+    padding: 8px;
+    background-color: #ffe6e6; 
+    color: #ff0000; 
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+
+.error-message.active {
+    display: block;
+}
 
 /*---------------------------------------
      FOOTER              

@@ -166,3 +166,35 @@
         width: 100%; /* Botones de ancho completo en mobile */
     }
 }
+
+
+
+/* Estilo para el menú desplegable de especialidad */
+#especialidad {
+    width: 100%; /* Ocupa todo el ancho del contenedor */
+    padding: 10px; /* Espaciado interno */
+    border: 1px solid #ced4da; /* Borde gris claro */
+    border-radius: 4px; /* Bordes redondeados */
+    background-color: #fff; /* Fondo blanco */
+    font-size: 16px; /* Tamaño de fuente */
+    color: #495057; /* Color del texto */
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; /* Transición suave */
+}
+
+/* Efecto al enfocar el menú */
+#especialidad:focus {
+    border-color: #80bdff; /* Borde azul claro al enfocar */
+    outline: 0; /* Sin contorno predeterminado */
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Sombra azul suave */
+}
+
+/* Estilo para las opciones dentro del menú */
+#especialidad option {
+    padding: 8px; /* Espaciado interno de las opciones */
+    background-color: #fff; /* Fondo blanco */
+}
+
+/* Efecto al pasar el ratón sobre las opciones */
+#especialidad option:hover {
+    background-color: #f8f9fa; /* Fondo gris claro al pasar el ratón */
+}

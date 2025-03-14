@@ -1,8 +1,13 @@
 <?php
+// Iniciar sesión si no está activa
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 include_once('../php/conexionDB.php');
 include_once('../php/consultas.php');
 
-// Verifica logueo del doctor
+// Validar sesión del doctor
 if (!isset($_SESSION['id_doctor'])) {
     $_SESSION['MensajeTexto'] = "Error: Acceso al sistema no registrado.";
     $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
@@ -10,7 +15,7 @@ if (!isset($_SESSION['id_doctor'])) {
     exit();
 }
 
-// Obtener id paciente
+// Validar ID del paciente
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     $_SESSION['MensajeTexto'] = "Error: ID de paciente no proporcionado.";
     $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
@@ -18,19 +23,24 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
     exit();
 }
 
-$patient_id = $_GET['id'];
+$patient_id = mysqli_real_escape_string($link, $_GET['id']);
 $doctor_id = $_SESSION['id_doctor'];
 
 // Obtener datos del paciente
 $patient = consultarPaciente($link, $patient_id);
+if (!$patient) {
+    $_SESSION['MensajeTexto'] = "Error: No se pudo obtener la información del paciente con ID $patient_id.";
+    $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
+    header("Location: inicioAdmin.php");
+    exit();
+}
 
-// Calcular la edad del paciente a partir de su fecha de nacimiento
+// Calcular la edad del paciente
+$age = 'N/A';
 if (isset($patient['fecha_nacimiento']) && !empty($patient['fecha_nacimiento'])) {
     $birthDate = new DateTime($patient['fecha_nacimiento']);
     $currentDate = new DateTime();
     $age = $currentDate->diff($birthDate)->y;
-} else {
-    $age = 'N/A';
 }
 
 // Obtener datos de la cita más reciente del paciente con este doctor
@@ -38,114 +48,390 @@ $query = "SELECT c.*, con.tipo, d.nombreD
           FROM citas c 
           LEFT JOIN consultas con ON con.id_consultas = c.id_consultas 
           LEFT JOIN doctor d ON d.id_doctor = c.id_doctor 
-          WHERE c.id_paciente = '$patient_id' AND c.id_doctor = '$doctor_id' 
+          WHERE c.id_paciente = ? AND c.id_doctor = ? 
           ORDER BY c.fecha_cita DESC LIMIT 1";
-$result = mysqli_query($link, $query);
-$appointment = mysqli_fetch_assoc($result);
+$stmt = mysqli_prepare($link, $query);
+mysqli_stmt_bind_param($stmt, "ii", $patient_id, $doctor_id);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
 
-// Manejo formulario para actualizar los datos del paciente
+if (!$result || mysqli_num_rows($result) == 0) {
+    $_SESSION['MensajeTexto'] = "Error: No se encontraron citas para este paciente con el doctor actual.";
+    $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
+    header("Location: inicioAdmin.php");
+    exit();
+}
+$appointment = mysqli_fetch_assoc($result);
+mysqli_stmt_close($stmt);
+
+// Manejo del formulario para actualizar datos del paciente
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_patient'])) {
-    $telefono = mysqli_real_escape_string($link, $_POST['telefono']);
-    $eps = mysqli_real_escape_string($link, $_POST['eps']);
-    $ocupacion = mysqli_real_escape_string($link, $_POST['ocupacion']);
-    $estado_civil = mysqli_real_escape_string($link, $_POST['estado_civil']);
-    $cedula = mysqli_real_escape_string($link, $_POST['cedula']);
-    $genero = mysqli_real_escape_string($link, $_POST['genero']);
-    $emergencia_nombre = mysqli_real_escape_string($link, $_POST['emergencia_nombre']);
-    $emergencia_telefono = mysqli_real_escape_string($link, $_POST['emergencia_telefono']);
+    $telefono = isset($_POST['telefono']) ? mysqli_real_escape_string($link, $_POST['telefono']) : '';
+    $eps = isset($_POST['eps']) ? mysqli_real_escape_string($link, $_POST['eps']) : '';
+    $ocupacion = isset($_POST['ocupacion']) ? mysqli_real_escape_string($link, $_POST['ocupacion']) : '';
+    $estado_civil = isset($_POST['estado_civil']) ? mysqli_real_escape_string($link, $_POST['estado_civil']) : '';
+    $cedula = isset($_POST['cedula']) ? mysqli_real_escape_string($link, $_POST['cedula']) : '';
+    $genero = isset($_POST['genero']) ? mysqli_real_escape_string($link, $_POST['genero']) : '';
+    $emergencia_nombre = isset($_POST['emergencia_nombre']) ? mysqli_real_escape_string($link, $_POST['emergencia_nombre']) : '';
+    $emergencia_telefono = isset($_POST['emergencia_telefono']) ? mysqli_real_escape_string($link, $_POST['emergencia_telefono']) : '';
     $menor_acompanante = isset($_POST['menor_acompanante']) ? mysqli_real_escape_string($link, $_POST['menor_acompanante']) : '';
     $menor_parentesco = isset($_POST['menor_parentesco']) ? mysqli_real_escape_string($link, $_POST['menor_parentesco']) : '';
     $menor_telefono = isset($_POST['menor_telefono']) ? mysqli_real_escape_string($link, $_POST['menor_telefono']) : '';
-    $tipo_sangre = mysqli_real_escape_string($link, $_POST['tipo_sangre']);
-    $alertas_medicas = mysqli_real_escape_string($link, $_POST['alertas_medicas']);
+    $tipo_sangre = isset($_POST['tipo_sangre']) ? mysqli_real_escape_string($link, $_POST['tipo_sangre']) : '';
+    $alertas_medicas = isset($_POST['alertas_medicas']) ? mysqli_real_escape_string($link, $_POST['alertas_medicas']) : '';
+    $lugar_direccion_residencia = isset($_POST['lugar_direccion_residencia']) ? mysqli_real_escape_string($link, $_POST['lugar_direccion_residencia']) : '';
 
-    // Actualizar los datos en la tabla pacientes
+    // Validar campos ENUM para aceptar solo 'Sí' o 'No'
+    $historia_cardiovasculares = isset($_POST['historia_cardiovasculares']) && in_array($_POST['historia_cardiovasculares'], ['Sí', 'No']) ? $_POST['historia_cardiovasculares'] : 'No';
+    $historia_hemorragicas = isset($_POST['historia_hemorragicas']) && in_array($_POST['historia_hemorragicas'], ['Sí', 'No']) ? $_POST['historia_hemorragicas'] : 'No';
+    $historia_dermatologicas = isset($_POST['historia_dermatologicas']) && in_array($_POST['historia_dermatologicas'], ['Sí', 'No']) ? $_POST['historia_dermatologicas'] : 'No';
+    $historia_mentales = isset($_POST['historia_mentales']) && in_array($_POST['historia_mentales'], ['Sí', 'No']) ? $_POST['historia_mentales'] : 'No';
+    $historia_diabetes = isset($_POST['historia_diabetes']) && in_array($_POST['historia_diabetes'], ['Sí', 'No']) ? $_POST['historia_diabetes'] : 'No';
+    $historia_cancer = isset($_POST['historia_cancer']) && in_array($_POST['historia_cancer'], ['Sí', 'No']) ? $_POST['historia_cancer'] : 'No';
+    $historia_artritis = isset($_POST['historia_artritis']) && in_array($_POST['historia_artritis'], ['Sí', 'No']) ? $_POST['historia_artritis'] : 'No';
+    $historia_alergias = isset($_POST['historia_alergias']) && in_array($_POST['historia_alergias'], ['Sí', 'No']) ? $_POST['historia_alergias'] : 'No';
+    $historia_cirugias = isset($_POST['historia_cirugias']) && in_array($_POST['historia_cirugias'], ['Sí', 'No']) ? $_POST['historia_cirugias'] : 'No';
+    $historia_otros = isset($_POST['historia_otros']) ? mysqli_real_escape_string($link, $_POST['historia_otros']) : '';
+
     $update_query = "UPDATE pacientes SET 
-                     telefono = '$telefono', 
-                     eps = '$eps', 
-                     ocupacion = '$ocupacion', 
-                     estado_civil = '$estado_civil', 
-                     cedula = '$cedula', 
-                     sexo = '$genero', 
-                     emergencia_nombre = '$emergencia_nombre', 
-                     emergencia_telefono = '$emergencia_telefono', 
-                     menor_acompanante = '$menor_acompanante', 
-                     menor_parentesco = '$menor_parentesco', 
-                     menor_telefono = '$menor_telefono', 
-                     tipo_sangre = '$tipo_sangre', 
-                     alertas_medicas = '$alertas_medicas' 
-                     WHERE id_paciente = '$patient_id'";
-
-    if (mysqli_query($link, $update_query)) {
-        $_SESSION['MensajeTexto'] = "Datos del paciente actualizados correctamente.";
-        $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-success text-white";
+                     telefono = ?, 
+                     eps = ?, 
+                     ocupacion = ?, 
+                     estado_civil = ?, 
+                     cedula = ?, 
+                     sexo = ?, 
+                     emergencia_nombre = ?, 
+                     emergencia_telefono = ?, 
+                     menor_acompanante = ?, 
+                     menor_parentesco = ?, 
+                     menor_telefono = ?, 
+                     tipo_sangre = ?, 
+                     alertas_medicas = ?,
+                     lugar_direccion_residencia = ?,
+                     historia_cardiovasculares = ?,
+                     historia_hemorragicas = ?,
+                     historia_dermatologicas = ?,
+                     historia_mentales = ?,
+                     historia_diabetes = ?,
+                     historia_cancer = ?,
+                     historia_artritis = ?,
+                     historia_alergias = ?,
+                     historia_cirugias = ?,
+                     historia_otros = ?
+                     WHERE id_paciente = ?";
+    $stmt = mysqli_prepare($link, $update_query);
+    if (!$stmt) {
+        $_SESSION['MensajeTexto'] = "Error al preparar la consulta: " . mysqli_error($link);
+        $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
         header("Location: informe.php?id=$patient_id");
         exit();
+    }
+
+    mysqli_stmt_bind_param(
+        $stmt,
+        "sssssssssssssssssssssssss",
+        $telefono,
+        $eps,
+        $ocupacion,
+        $estado_civil,
+        $cedula,
+        $genero,
+        $emergencia_nombre,
+        $emergencia_telefono,
+        $menor_acompanante,
+        $menor_parentesco,
+        $menor_telefono,
+        $tipo_sangre,
+        $alertas_medicas,
+        $lugar_direccion_residencia,
+        $historia_cardiovasculares,
+        $historia_hemorragicas,
+        $historia_dermatologicas,
+        $historia_mentales,
+        $historia_diabetes,
+        $historia_cancer,
+        $historia_artritis,
+        $historia_alergias,
+        $historia_cirugias,
+        $historia_otros,
+        $patient_id
+    );
+
+    if (mysqli_stmt_execute($stmt)) {
+        $_SESSION['MensajeTexto'] = "Datos del paciente actualizados correctamente.";
+        $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-success text-white";
+        $patient = consultarPaciente($link, $patient_id);
     } else {
-        $_SESSION['MensajeTexto'] = "Error al actualizar los datos del paciente.";
+        $_SESSION['MensajeTexto'] = "Error al actualizar los datos del paciente: " . mysqli_error($link);
         $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
     }
+    mysqli_stmt_close($stmt);
+    header("Location: informe.php?id=$patient_id");
+    exit();
 }
 
 // Manejo del formulario para el informe médico
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_medical'])) {
-    $examen_intraoral = mysqli_real_escape_string($link, $_POST['examen_intraoral']);
-    $examen_extraoral = mysqli_real_escape_string($link, $_POST['examen_extraoral']);
-    $examen_atm = mysqli_real_escape_string($link, $_POST['examen_atm']);
-    $evolucion = mysqli_real_escape_string($link, $_POST['evolucion']);
-    $diagnostico = mysqli_real_escape_string($link, $_POST['diagnostico']);
-    $plan_tratamiento = mysqli_real_escape_string($link, $_POST['plan_tratamiento']);
-    $costo = mysqli_real_escape_string($link, $_POST['costo']);
+    $examen_intraoral = isset($_POST['examen_intraoral']) ? mysqli_real_escape_string($link, trim($_POST['examen_intraoral'])) : '';
+    $examen_extraoral = isset($_POST['examen_extraoral']) ? mysqli_real_escape_string($link, trim($_POST['examen_extraoral'])) : '';
+    $examen_atm = isset($_POST['examen_atm']) ? mysqli_real_escape_string($link, trim($_POST['examen_atm'])) : '';
+    $observacion_intraoral = isset($_POST['observacion_intraoral']) ? mysqli_real_escape_string($link, trim($_POST['observacion_intraoral'])) : '';
+    $observacion_extraoral_atm = isset($_POST['observacion_extraoral_atm']) ? mysqli_real_escape_string($link, trim($_POST['observacion_extraoral_atm'])) : '';
+    $descripcion_radiografica = isset($_POST['descripcion_radiografica']) ? mysqli_real_escape_string($link, trim($_POST['descripcion_radiografica'])) : '';
+    $diagnostico_periodontal = isset($_POST['diagnostico_periodontal']) ? mysqli_real_escape_string($link, trim($_POST['diagnostico_periodontal'])) : '';
+    $plan_tratamiento = isset($_POST['plan_tratamiento']) ? mysqli_real_escape_string($link, trim($_POST['plan_tratamiento'])) : '';
+    $pronostico = isset($_POST['pronostico']) ? mysqli_real_escape_string($link, trim($_POST['pronostico'])) : '';
+    $evolucion = isset($_POST['evolucion']) ? mysqli_real_escape_string($link, trim($_POST['evolucion'])) : '';
+    $diagnostico = isset($_POST['diagnostico']) ? mysqli_real_escape_string($link, trim($_POST['diagnostico'])) : '';
+    $costo = isset($_POST['costo']) && $_POST['costo'] !== '' ? mysqli_real_escape_string($link, trim($_POST['costo'])) : '0';
 
-    // Lógica de archivos fotos paciente
     $radiografia = '';
     $foto_boca = '';
-    if (isset($_FILES['radiografia']) && $_FILES['radiografia']['error'] == 0) {
+
+    // Manejo de la radiografía
+    if (isset($_FILES['radiografia']) && $_FILES['radiografia']['error'] === UPLOAD_ERR_OK) {
         $radiografia_path = "../uploads/radiografias/";
-        $radiografia_name = $patient_id . "_radiografia_" . time() . "." . pathinfo($_FILES['radiografia']['name'], PATHINFO_EXTENSION);
-        move_uploaded_file($_FILES['radiografia']['tmp_name'], $radiografia_path . $radiografia_name);
-        $radiografia = $radiografia_name;
+        if (!is_dir($radiografia_path) && !mkdir($radiografia_path, 0777, true)) {
+            $_SESSION['MensajeTexto'] = "Error: No se pudo crear el directorio para radiografías.";
+            $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
+        } else {
+            $radiografia_name = $patient_id . "_radiografia_" . time() . "." . pathinfo($_FILES['radiografia']['name'], PATHINFO_EXTENSION);
+            if (!move_uploaded_file($_FILES['radiografia']['tmp_name'], $radiografia_path . $radiografia_name)) {
+                $_SESSION['MensajeTexto'] = "Error al subir la radiografía.";
+                $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
+            } else {
+                $radiografia = $radiografia_name;
+            }
+        }
     }
-    if (isset($_FILES['foto_boca']) && $_FILES['foto_boca']['error'] == 0) {
+
+    // Manejo de la foto de la boca
+    if (isset($_FILES['foto_boca']) && $_FILES['foto_boca']['error'] === UPLOAD_ERR_OK) {
         $foto_boca_path = "../uploads/fotos_boca/";
-        $foto_boca_name = $patient_id . "_boca_" . time() . "." . pathinfo($_FILES['foto_boca']['name'], PATHINFO_EXTENSION);
-        move_uploaded_file($_FILES['foto_boca']['tmp_name'], $foto_boca_path . $foto_boca_name);
-        $foto_boca = $foto_boca_name;
+        if (!is_dir($foto_boca_path) && !mkdir($foto_boca_path, 0777, true)) {
+            $_SESSION['MensajeTexto'] = "Error: No se pudo crear el directorio para fotos de la boca.";
+            $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
+        } else {
+            $foto_boca_name = $patient_id . "_boca_" . time() . "." . pathinfo($_FILES['foto_boca']['name'], PATHINFO_EXTENSION);
+            if (!move_uploaded_file($_FILES['foto_boca']['tmp_name'], $foto_boca_path . $foto_boca_name)) {
+                $_SESSION['MensajeTexto'] = "Error al subir la foto de la boca.";
+                $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
+            } else {
+                $foto_boca = $foto_boca_name;
+            }
+        }
     }
 
-    // Insertar o actualizar el informe médico 
-    $check_query = "SELECT * FROM informe_medico WHERE id_cita = '{$appointment['id_cita']}'";
-    $check_result = mysqli_query($link, $check_query);
-    if (mysqli_num_rows($check_result) > 0) {
-        $update_medical_query = "UPDATE informe_medico SET 
-                                 examen_intraoral = '$examen_intraoral', 
-                                 examen_extraoral = '$examen_extraoral', 
-                                 examen_atm = '$examen_atm', 
-                                 evolucion = '$evolucion', 
-                                 diagnostico = '$diagnostico', 
-                                 plan_tratamiento = '$plan_tratamiento', 
-                                 costo = '$costo'" .
-            ($radiografia ? ", radiografia = '$radiografia'" : "") .
-            ($foto_boca ? ", foto_boca = '$foto_boca'" : "") .
-            " WHERE id_cita = '{$appointment['id_cita']}'";
-        mysqli_query($link, $update_medical_query);
+    $check_query = "SELECT * FROM informe_medico WHERE id_cita = ?";
+    $stmt = mysqli_prepare($link, $check_query);
+    mysqli_stmt_bind_param($stmt, "i", $appointment['id_cita']);
+    mysqli_stmt_execute($stmt);
+    $check_result = mysqli_stmt_get_result($stmt);
+
+    if (!$check_result) {
+        $_SESSION['MensajeTexto'] = "Error al verificar el informe médico: " . mysqli_error($link);
+        $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
+    } elseif (mysqli_num_rows($check_result) > 0) {
+        // Actualizar informe existente
+        // Determinar qué campos actualizar según si se subieron radiografía y/o foto_boca
+        if ($radiografia && $foto_boca) {
+            $update_medical_query = "UPDATE informe_medico SET 
+                                    examen_intraoral = ?, 
+                                    examen_extraoral = ?, 
+                                    examen_atm = ?, 
+                                    observacion_intraoral = ?, 
+                                    observacion_extraoral_atm = ?, 
+                                    descripcion_radiografica = ?, 
+                                    diagnostico_periodontal = ?, 
+                                    plan_tratamiento = ?, 
+                                    pronostico = ?, 
+                                    evolucion = ?, 
+                                    diagnostico = ?, 
+                                    costo = ?, 
+                                    radiografia = ?, 
+                                    foto_boca = ? 
+                                    WHERE id_cita = ?";
+            $stmt = mysqli_prepare($link, $update_medical_query);
+            mysqli_stmt_bind_param(
+                $stmt,
+                "ssssssssssssssi",
+                $examen_intraoral,
+                $examen_extraoral,
+                $examen_atm,
+                $observacion_intraoralFixtures, 
+                $observacion_extraoral_atm,
+                $descripcion_radiografica,
+                $diagnostico_periodontal,
+                $plan_tratamiento,
+                $pronostico,
+                $evolucion,
+                $diagnostico,
+                $costo,
+                $radiografia,
+                $foto_boca,
+                $appointment['id_cita']
+            );
+        } elseif ($radiografia) {
+            $update_medical_query = "UPDATE informe_medico SET 
+                                    examen_intraoral = ?, 
+                                    examen_extraoral = ?, 
+                                    examen_atm = ?, 
+                                    observacion_intraoral = ?, 
+                                    observacion_extraoral_atm = ?, 
+                                    descripcion_radiografica = ?, 
+                                    diagnostico_periodontal = ?, 
+                                    plan_tratamiento = ?, 
+                                    pronostico = ?, 
+                                    evolucion = ?, 
+                                    diagnostico = ?, 
+                                    costo = ?, 
+                                    radiografia = ? 
+                                    WHERE id_cita = ?";
+            $stmt = mysqli_prepare($link, $update_medical_query);
+            mysqli_stmt_bind_param(
+                $stmt,
+                "sssssssssssssi",
+                $examen_intraoral,
+                $examen_extraoral,
+                $examen_atm,
+                $observacion_intraoral,
+                $observacion_extraoral_atm,
+                $descripcion_radiografica,
+                $diagnostico_periodontal,
+                $plan_tratamiento,
+                $pronostico,
+                $evolucion,
+                $diagnostico,
+                $costo,
+                $radiografia,
+                $appointment['id_cita']
+            );
+        } elseif ($foto_boca) {
+            $update_medical_query = "UPDATE informe_medico SET 
+                                    examen_intraoral = ?, 
+                                    examen_extraoral = ?, 
+                                    examen_atm = ?, 
+                                    observacion_intraoral = ?, 
+                                    observacion_extraoral_atm = ?, 
+                                    descripcion_radiografica = ?, 
+                                    diagnostico_periodontal = ?, 
+                                    plan_tratamiento = ?, 
+                                    pronostico = ?, 
+                                    evolucion = ?, 
+                                    diagnostico = ?, 
+                                    costo = ?, 
+                                    foto_boca = ? 
+                                    WHERE id_cita = ?";
+            $stmt = mysqli_prepare($link, $update_medical_query);
+            mysqli_stmt_bind_param(
+                $stmt,
+                "sssssssssssssi",
+                $examen_intraoral,
+                $examen_extraoral,
+                $examen_atm,
+                $observacion_intraoral,
+                $observacion_extraoral_atm,
+                $descripcion_radiografica,
+                $diagnostico_periodontal,
+                $plan_tratamiento,
+                $pronostico,
+                $evolucion,
+                $diagnostico,
+                $costo,
+                $foto_boca,
+                $appointment['id_cita']
+            );
+        } else {
+            $update_medical_query = "UPDATE informe_medico SET 
+                                    examen_intraoral = ?, 
+                                    examen_extraoral = ?, 
+                                    examen_atm = ?, 
+                                    observacion_intraoral = ?, 
+                                    observacion_extraoral_atm = ?, 
+                                    descripcion_radiografica = ?, 
+                                    diagnostico_periodontal = ?, 
+                                    plan_tratamiento = ?, 
+                                    pronostico = ?, 
+                                    evolucion = ?, 
+                                    diagnostico = ?, 
+                                    costo = ? 
+                                    WHERE id_cita = ?";
+            $stmt = mysqli_prepare($link, $update_medical_query);
+            mysqli_stmt_bind_param(
+                $stmt,
+                "ssssssssssssi",
+                $examen_intraoral,
+                $examen_extraoral,
+                $examen_atm,
+                $observacion_intraoral,
+                $observacion_extraoral_atm,
+                $descripcion_radiografica,
+                $diagnostico_periodontal,
+                $plan_tratamiento,
+                $pronostico,
+                $evolucion,
+                $diagnostico,
+                $costo,
+                $appointment['id_cita']
+            );
+        }
+
+        if (mysqli_stmt_execute($stmt)) {
+            $_SESSION['MensajeTexto'] = "Informe médico actualizado correctamente.";
+            $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-success text-white";
+        } else {
+            $_SESSION['MensajeTexto'] = "Error al actualizar el informe médico: " . mysqli_error($link);
+            $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
+        }
+        mysqli_stmt_close($stmt);
     } else {
-        // Insertar nuevo registro
-        $insert_medical_query = "INSERT INTO informe_medico (id_cita, id_paciente, examen_intraoral, examen_extraoral, examen_atm, evolucion, diagnostico, plan_tratamiento, costo, radiografia, foto_boca) 
-                                 VALUES ('{$appointment['id_cita']}', '$patient_id', '$examen_intraoral', '$examen_extraoral', '$examen_atm', '$evolucion', '$diagnostico', '$plan_tratamiento', '$costo', '$radiografia', '$foto_boca')";
-        mysqli_query($link, $insert_medical_query);
+        // Insertar nuevo informe
+        $insert_medical_query = "INSERT INTO informe_medico (id_cita, id_paciente, examen_intraoral, examen_extraoral, examen_atm, observacion_intraoral, observacion_extraoral_atm, descripcion_radiografica, diagnostico_periodontal, plan_tratamiento, pronostico, evolucion, diagnostico, costo, radiografia, foto_boca) 
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $stmt = mysqli_prepare($link, $insert_medical_query);
+        mysqli_stmt_bind_param(
+            $stmt,
+            "iissssssssssssss",
+            $appointment['id_cita'],
+            $patient_id,
+            $examen_intraoral,
+            $examen_extraoral,
+            $examen_atm,
+            $observacion_intraoral,
+            $observacion_extraoral_atm,
+            $descripcion_radiografica,
+            $diagnostico_periodontal,
+            $plan_tratamiento,
+            $pronostico,
+            $evolucion,
+            $diagnostico,
+            $costo,
+            $radiografia,
+            $foto_boca
+        );
+
+        if (mysqli_stmt_execute($stmt)) {
+            $_SESSION['MensajeTexto'] = "Informe médico creado correctamente.";
+            $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-success text-white";
+        } else {
+            $_SESSION['MensajeTexto'] = "Error al crear el informe médico: " . mysqli_error($link);
+            $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
+        }
+        mysqli_stmt_close($stmt);
     }
 
-    $_SESSION['MensajeTexto'] = "Informe médico actualizado correctamente.";
-    $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-success text-white";
     header("Location: informe.php?id=$patient_id");
     exit();
 }
 
 // Obtener el informe médico actual
-$medical_report_query = "SELECT * FROM informe_medico WHERE id_cita = '{$appointment['id_cita']}'";
-$medical_report_result = mysqli_query($link, $medical_report_query);
+$medical_report_query = "SELECT * FROM informe_medico WHERE id_cita = ?";
+$stmt = mysqli_prepare($link, $medical_report_query);
+mysqli_stmt_bind_param($stmt, "i", $appointment['id_cita']);
+mysqli_stmt_execute($stmt);
+$medical_report_result = mysqli_stmt_get_result($stmt);
 $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_assoc($medical_report_result) : [];
+mysqli_stmt_close($stmt);
 ?>
 
 <!DOCTYPE html>
@@ -155,18 +441,14 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Informe del Paciente - Odontólogo</title>
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="../src/css/lib/bootstrap/css/bootstrap.min.css">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="../src/css/lib/fontawesome/css/all.css">
-    <!-- Estilos Personalizados -->
     <link rel="stylesheet" href="../src/css/admin.css">
     <link rel="stylesheet" href="../src/css/informe_paciente.css">
 </head>
 
 <body>
     <aside class="sidebar">
-        <!-- Contenido de la barra lateral -->
         <div class="toggle">
             <a href="#" class="burger js-menu-toggle" data-toggle="collapse" data-target="#main-navbar">
                 <span></span>
@@ -176,22 +458,25 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
             <div class="profile">
                 <?php
                 $doctor = consultarDoctor($link, $doctor_id);
-                if ($doctor['sexo'] == 'Masculino') {
-                    echo '<img src="../src/img/odontologo.png" class="rounded-circle" width="150">';
-                } elseif ($doctor['sexo'] == 'Femenino') {
-                    echo '<img src="../src/img/odontologa.png" class="rounded-circle" width="150">';
+                if (!$doctor) {
+                    echo '<p>Error: No se pudo obtener la información del doctor.</p>';
+                } else {
+                    if ($doctor['sexo'] == 'Masculino') {
+                        echo '<img src="../src/img/odontologo.png" class="rounded-circle" width="150">';
+                    } elseif ($doctor['sexo'] == 'Femenino') {
+                        echo '<img src="../src/img/odontologa.png" class="rounded-circle" width="150">';
+                    }
+                    echo '<h3 class="name">' . htmlspecialchars(utf8_decode($doctor['nombreD'] . ' ' . $doctor['apellido'])) . '</h3>';
+                    echo '<span class="country">Barbosa Santander</span>';
                 }
                 ?>
-                <h3 class="name"><?php echo utf8_decode($doctor['nombreD'] . ' ' . $doctor['apellido']); ?></h3>
-                <span class="country">Barbosa Santander</span>
             </div>
             <div class="nav-menu">
                 <ul>
-                    <li><a href="inicioAdmin.php"><span class="icon-location-arrow mr-3"></span> <i class="far fa-calendar-check"></i> Citas pendientes</a></li>
+                    <li><a href="inicioAdmin.php"><span class="icon-location-arrow mr-3"></span><i class="far fa-calendar-check"></i> Citas</a></li>
                     <li><a href="doctores.php"><span class="icon-location-arrow mr-3"></span><i class="fas fa-user-md"></i> Dentistas</a></li>
-                    <li><a href="calendar.php"><span class="icon-pie-chart mr-3"></span> <i class="far fa-calendar-alt"></i> Calendario</a></li>
-                    <li><a href="consultarrepor.php"><span class="icon-pie-chart mr-3"></span> <i class="far fa-calendar-alt"></i> Reportes citas</a></li>
-                    <li><a href="consultarrepor.php"><span class="icon-pie-chart mr-3"></span> <i class="far fa-calendar-alt"></i> Historia Clinica</a></li>
+                    <li><a href="calendar.php"><span class="icon-pie-chart mr-3"></span><i class="far fa-calendar-alt"></i> Calendario</a></li>
+                    <li><a href="historia_clinica.php"><span class="icon-pie-chart mr-3"></span><i class="far fa-calendar-alt"></i> Historia Clínica</a></li>
                     <li><a href="../php/cerrar.php"><span class="icon-sign-out mr-3"></span><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a></li>
                 </ul>
             </div>
@@ -209,10 +494,9 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
                                 <li class="breadcrumb-item active">Informe del Paciente</li>
                             </ol>
 
-                            <!-- Mostrar Mensajes -->
                             <?php if (isset($_SESSION['MensajeTexto'])) { ?>
-                                <div class="alert <?php echo $_SESSION['MensajeTipo']; ?>" role="alert">
-                                    <?php echo $_SESSION['MensajeTexto']; ?>
+                                <div class="alert <?php echo htmlspecialchars($_SESSION['MensajeTipo']); ?>" role="alert">
+                                    <?php echo htmlspecialchars($_SESSION['MensajeTexto']); ?>
                                     <button class="delete"><i class="fa fa-times"></i></button>
                                 </div>
                                 <?php
@@ -221,42 +505,38 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
                                 ?>
                             <?php } ?>
 
-                            <!-- Información del Paciente -->
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-user"></i> Información del Paciente
-                                </div>
-                                <div class="card-body patient-info">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h5>Datos Principales</h5>
-                                            <p><strong>Nombre:</strong> <?php echo $patient['nombre'] . ' ' . $patient['apellido']; ?></p>
-                                            <p><strong>Edad:</strong> <?php echo $age; ?> años</p>
-                                            <p><strong>Fecha de Nacimiento:</strong> <?php echo $patient['fecha_nacimiento']; ?></p>
-                                            <p><strong>Correo Electrónico:</strong> <?php echo $patient['correo_electronico']; ?></p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <h5>Datos Médicos</h5>
-                                            <form method="POST" action="">
+                            <form method="POST" action="">
+                                <!-- Información General -->
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <i class="fas fa-user"></i> Información General
+                                    </div>
+                                    <div class="card-body patient-info">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h5>Datos Principales</h5>
+                                                <p><strong>Nombre:</strong> <?php echo htmlspecialchars($patient['nombre'] . ' ' . $patient['apellido']); ?></p>
+                                                <p><strong>Edad:</strong> <?php echo htmlspecialchars($age); ?> años</p>
+                                                <p><strong>Fecha de Nacimiento:</strong> <?php echo htmlspecialchars($patient['fecha_nacimiento']); ?></p>
+                                                <p><strong>Correo Electrónico:</strong> <?php echo htmlspecialchars($patient['correo_electronico']); ?></p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h5>Datos Médicos</h5>
+                                                <div class="form-group">
+                                                    <label for="cedula">Nº de Documento:</label>
+                                                    <input type="text" class="form-control" id="cedula" name="cedula" value="<?php echo htmlspecialchars($patient['cedula'] ?? ''); ?>">
+                                                </div>
                                                 <div class="form-group">
                                                     <label for="telefono">Teléfono:</label>
-                                                    <input type="text" class="form-control" id="telefono" name="telefono" value="<?php echo $patient['telefono'] ?? ''; ?>">
+                                                    <input type="text" class="form-control" id="telefono" name="telefono" value="<?php echo htmlspecialchars($patient['telefono'] ?? ''); ?>">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="lugar_direccion_residencia">Lugar y Dirección de Residencia:</label>
+                                                    <input type="text" class="form-control" id="lugar_direccion_residencia" name="lugar_direccion_residencia" value="<?php echo htmlspecialchars($patient['lugar_direccion_residencia'] ?? ''); ?>">
                                                 </div>
                                                 <div class="form-group">
                                                     <label for="eps">EPS:</label>
-                                                    <input type="text" class="form-control" id="eps" name="eps" value="<?php echo $patient['eps'] ?? ''; ?>">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="ocupacion">Ocupación:</label>
-                                                    <input type="text" class="form-control" id="ocupacion" name="ocupacion" value="<?php echo $patient['ocupacion'] ?? ''; ?>">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="estado_civil">Estado Civil:</label>
-                                                    <input type="text" class="form-control" id="estado_civil" name="estado_civil" value="<?php echo $patient['estado_civil'] ?? ''; ?>">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="cedula">Cédula:</label>
-                                                    <input type="text" class="form-control" id="cedula" name="cedula" value="<?php echo $patient['cedula'] ?? ''; ?>">
+                                                    <input type="text" class="form-control" id="eps" name="eps" value="<?php echo htmlspecialchars($patient['eps'] ?? ''); ?>">
                                                 </div>
                                                 <div class="form-group">
                                                     <label for="genero">Género:</label>
@@ -266,57 +546,142 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
                                                     </select>
                                                 </div>
                                                 <div class="form-group">
+                                                    <label for="ocupacion">Ocupación:</label>
+                                                    <input type="text" class="form-control" id="ocupacion" name="ocupacion" value="<?php echo htmlspecialchars($patient['ocupacion'] ?? ''); ?>">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="estado_civil">Estado Civil:</label>
+                                                    <input type="text" class="form-control" id="estado_civil" name="estado_civil" value="<?php echo htmlspecialchars($patient['estado_civil'] ?? ''); ?>">
+                                                </div>
+                                                <div class="form-group">
                                                     <label for="emergencia_nombre">En caso de emergencia, llamar a:</label>
-                                                    <input type="text" class="form-control" id="emergencia_nombre" name="emergencia_nombre" value="<?php echo $patient['emergencia_nombre'] ?? ''; ?>">
+                                                    <input type="text" class="form-control" id="emergencia_nombre" name="emergencia_nombre" value="<?php echo htmlspecialchars($patient['emergencia_nombre'] ?? ''); ?>">
                                                 </div>
                                                 <div class="form-group">
                                                     <label for="emergencia_telefono">Teléfono de Emergencia:</label>
-                                                    <input type="text" class="form-control" id="emergencia_telefono" name="emergencia_telefono" value="<?php echo $patient['emergencia_telefono'] ?? ''; ?>">
+                                                    <input type="text" class="form-control" id="emergencia_telefono" name="emergencia_telefono" value="<?php echo htmlspecialchars($patient['emergencia_telefono'] ?? ''); ?>">
                                                 </div>
                                                 <?php if ($age !== 'N/A' && $age < 18) { ?>
                                                     <div class="form-group">
                                                         <label for="menor_acompanante">Nombre del Acompañante (Menor de Edad):</label>
-                                                        <input type="text" class="form-control" id="menor_acompanante" name="menor_acompanante" value="<?php echo $patient['menor_acompanante'] ?? ''; ?>">
+                                                        <input type="text" class="form-control" id="menor_acompanante" name="menor_acompanante" value="<?php echo htmlspecialchars($patient['menor_acompanante'] ?? ''); ?>">
                                                     </div>
                                                     <div class="form-group">
                                                         <label for="menor_parentesco">Parentesco:</label>
-                                                        <input type="text" class="form-control" id="menor_parentesco" name="menor_parentesco" value="<?php echo $patient['menor_parentesco'] ?? ''; ?>">
+                                                        <input type="text" class="form-control" id="menor_parentesco" name="menor_parentesco" value="<?php echo htmlspecialchars($patient['menor_parentesco'] ?? ''); ?>">
                                                     </div>
                                                     <div class="form-group">
                                                         <label for="menor_telefono">Teléfono del Acompañante:</label>
-                                                        <input type="text" class="form-control" id="menor_telefono" name="menor_telefono" value="<?php echo $patient['menor_telefono'] ?? ''; ?>">
+                                                        <input type="text" class="form-control" id="menor_telefono" name="menor_telefono" value="<?php echo htmlspecialchars($patient['menor_telefono'] ?? ''); ?>">
                                                     </div>
                                                 <?php } ?>
                                                 <div class="form-group">
                                                     <label for="tipo_sangre">Tipo de Sangre:</label>
-                                                    <input type="text" class="form-control" id="tipo_sangre" name="tipo_sangre" value="<?php echo $patient['tipo_sangre'] ?? ''; ?>">
+                                                    <input type="text" class="form-control" id="tipo_sangre" name="tipo_sangre" value="<?php echo htmlspecialchars($patient['tipo_sangre'] ?? ''); ?>">
                                                 </div>
-                                                <div class="form-group">
-                                                    <label for="alertas_medicas">Alertas Médicas:</label>
-                                                    <textarea class="form-control" id="alertas_medicas" name="alertas_medicas"><?php echo $patient['alertas_medicas'] ?? ''; ?></textarea>
-                                                </div>
-                                                <button type="submit" name="update_patient" class="btn btn-primary">Actualizar Datos</button>
-                                            </form>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Información de la Cita -->
+                                <!-- Anamnesis -->
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <i class="fas fa-heartbeat"></i> Anamnesis (Historia Familiar o Personal)
+                                    </div>
+                                    <div class="card-body patient-info">
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>Historia Familiar o Personal</th>
+                                                    <th>Sí</th>
+                                                    <th>No</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>1. Enfermedades Cardiovasculares</td>
+                                                    <td><input type="radio" name="historia_cardiovasculares" value="Sí" <?php echo (isset($patient['historia_cardiovasculares']) && $patient['historia_cardiovasculares'] == 'Sí') ? 'checked' : ''; ?> required></td>
+                                                    <td><input type="radio" name="historia_cardiovasculares" value="No" <?php echo (isset($patient['historia_cardiovasculares']) && $patient['historia_cardiovasculares'] == 'No') ? 'checked' : ''; ?>></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>2. Enfermedades Hemorrágicas</td>
+                                                    <td><input type="radio" name="historia_hemorragicas" value="Sí" <?php echo (isset($patient['historia_hemorragicas']) && $patient['historia_hemorragicas'] == 'Sí') ? 'checked' : ''; ?> required></td>
+                                                    <td><input type="radio" name="historia_hemorragicas" value="No" <?php echo (isset($patient['historia_hemorragicas']) && $patient['historia_hemorragicas'] == 'No') ? 'checked' : ''; ?>></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>3. Enfermedades Dermatológicas</td>
+                                                    <td><input type="radio" name="historia_dermatologicas" value="Sí" <?php echo (isset($patient['historia_dermatologicas']) && $patient['historia_dermatologicas'] == 'Sí') ? 'checked' : ''; ?> required></td>
+                                                    <td><input type="radio" name="historia_dermatologicas" value="No" <?php echo (isset($patient['historia_dermatologicas']) && $patient['historia_dermatologicas'] == 'No') ? 'checked' : ''; ?>></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>4. Enfermedades Mentales</td>
+                                                    <td><input type="radio" name="historia_mentales" value="Sí" <?php echo (isset($patient['historia_mentales']) && $patient['historia_mentales'] == 'Sí') ? 'checked' : ''; ?> required></td>
+                                                    <td><input type="radio" name="historia_mentales" value="No" <?php echo (isset($patient['historia_mentales']) && $patient['historia_mentales'] == 'No') ? 'checked' : ''; ?>></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>5. Diabetes</td>
+                                                    <td><input type="radio" name="historia_diabetes" value="Sí" <?php echo (isset($patient['historia_diabetes']) && $patient['historia_diabetes'] == 'Sí') ? 'checked' : ''; ?> required></td>
+                                                    <td><input type="radio" name="historia_diabetes" value="No" <?php echo (isset($patient['historia_diabetes']) && $patient['historia_diabetes'] == 'No') ? 'checked' : ''; ?>></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>6. Cáncer</td>
+                                                    <td><input type="radio" name="historia_cancer" value="Sí" <?php echo (isset($patient['historia_cancer']) && $patient['historia_cancer'] == 'Sí') ? 'checked' : ''; ?> required></td>
+                                                    <td><input type="radio" name="historia_cancer" value="No" <?php echo (isset($patient['historia_cancer']) && $patient['historia_cancer'] == 'No') ? 'checked' : ''; ?>></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>7. Artritis</td>
+                                                    <td><input type="radio" name="historia_artritis" value="Sí" <?php echo (isset($patient['historia_artritis']) && $patient['historia_artritis'] == 'Sí') ? 'checked' : ''; ?> required></td>
+                                                    <td><input type="radio" name="historia_artritis" value="No" <?php echo (isset($patient['historia_artritis']) && $patient['historia_artritis'] == 'No') ? 'checked' : ''; ?>></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>8. Alergias</td>
+                                                    <td><input type="radio" name="historia_alergias" value="Sí" <?php echo (isset($patient['historia_alergias']) && $patient['historia_alergias'] == 'Sí') ? 'checked' : ''; ?> required></td>
+                                                    <td><input type="radio" name="historia_alergias" value="No" <?php echo (isset($patient['historia_alergias']) && $patient['historia_alergias'] == 'No') ? 'checked' : ''; ?>></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>9. Cirugías</td>
+                                                    <td><input type="radio" name="historia_cirugias" value="Sí" <?php echo (isset($patient['historia_cirugias']) && $patient['historia_cirugias'] == 'Sí') ? 'checked' : ''; ?> required></td>
+                                                    <td><input type="radio" name="historia_cirugias" value="No" <?php echo (isset($patient['historia_cirugias']) && $patient['historia_cirugias'] == 'No') ? 'checked' : ''; ?>></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>10. Otros</td>
+                                                    <td colspan="2" class="position-relative">
+                                                        <textarea class="form-control compact-textarea" name="historia_otros" id="historia_otros" maxlength="17"><?php echo htmlspecialchars($patient['historia_otros'] ?? ''); ?></textarea>
+                                                        <span id="char_count" class="char-counter"></span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <div class="form-group">
+                                            <label for="alertas_medicas">Alertas Médicas:</label>
+                                            <textarea class="form-control" id="alertas_medicas" name="alertas_medicas"><?php echo htmlspecialchars($patient['alertas_medicas'] ?? ''); ?></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="button-container custom-button-container">
+                                    <button type="submit" name="update_patient" class="btn btn-update">
+                                        <i class="fas fa-sync-alt"></i> Actualizar Datos
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- Información de la cita -->
                             <div class="card mb-4">
                                 <div class="card-header">
                                     <i class="far fa-calendar-check"></i> Información de la Cita
                                 </div>
                                 <div class="card-body patient-info">
-                                    <p><strong>Fecha:</strong> <?php echo $appointment['fecha_cita']; ?></p>
-                                    <p><strong>Hora:</strong> <?php echo $appointment['hora_cita']; ?></p>
-                                    <p><strong>Doctor:</strong> <?php echo $appointment['nombreD']; ?></p>
-                                    <p><strong>Motivo de Consulta:</strong> <?php echo $appointment['tipo']; ?></p>
-                                    <p><strong>Estado:</strong> <?php echo $appointment['estado'] == 'A' ? 'Realizada' : 'Pendiente'; ?></p>
+                                    <p><strong>Fecha:</strong> <?php echo htmlspecialchars($appointment['fecha_cita']); ?></p>
+                                    <p><strong>Hora:</strong> <?php echo htmlspecialchars($appointment['hora_cita']); ?></p>
+                                    <p><strong>Doctor:</strong> <?php echo htmlspecialchars($appointment['nombreD']); ?></p>
+                                    <p><strong>Motivo de Consulta:</strong> <?php echo htmlspecialchars($appointment['tipo']); ?></p>
+                                    <p><strong>Estado:</strong> <?php echo htmlspecialchars($appointment['estado'] == 'A' ? 'Realizada' : 'Pendiente'); ?></p>
                                 </div>
                             </div>
 
-                            <!-- Informe Médico -->
+                            <!-- Informe médico -->
                             <div class="card mb-4">
                                 <div class="card-header">
                                     <i class="fas fa-notes-medical"></i> Informe Médico
@@ -325,18 +690,40 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
                                     <form method="POST" action="" enctype="multipart/form-data">
                                         <div class="form-group">
                                             <label for="examen_intraoral">Examen Clínico Intraoral:</label>
-                                            <textarea class="form-control" id="examen_intraoral" name="examen_intraoral"><?php echo $medical_report['examen_intraoral'] ?? ''; ?></textarea>
+                                            <textarea class="form-control" id="examen_intraoral" name="examen_intraoral"><?php echo htmlspecialchars($medical_report['examen_intraoral'] ?? ''); ?></textarea>
                                         </div>
                                         <div class="form-group">
                                             <label for="examen_extraoral">Examen Clínico Extraoral:</label>
-                                            <textarea class="form-control" id="examen_extraoral" name="examen_extraoral"><?php echo $medical_report['examen_extraoral'] ?? ''; ?></textarea>
+                                            <textarea class="form-control" id="examen_extraoral" name="examen_extraoral"><?php echo htmlspecialchars($medical_report['examen_extraoral'] ?? ''); ?></textarea>
                                         </div>
                                         <div class="form-group">
                                             <label for="examen_atm">Examen ATM:</label>
-                                            <textarea class="form-control" id="examen_atm" name="examen_atm"><?php echo $medical_report['examen_atm'] ?? ''; ?></textarea>
+                                            <textarea class="form-control" id="examen_atm" name="examen_atm"><?php echo htmlspecialchars($medical_report['examen_atm'] ?? ''); ?></textarea>
                                         </div>
-
-                                        <!-- Sección de Radiografía -->
+                                        <div class="form-group">
+                                            <label for="observacion_intraoral">Observación, Palpación Intraoral:</label>
+                                            <textarea class="form-control" id="observacion_intraoral" name="observacion_intraoral"><?php echo htmlspecialchars($medical_report['observacion_intraoral'] ?? ''); ?></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="observacion_extraoral_atm">Observación, Palpación Extraoral (ATM y Músculos Masticación):</label>
+                                            <textarea class="form-control" id="observacion_extraoral_atm" name="observacion_extraoral_atm"><?php echo htmlspecialchars($medical_report['observacion_extraoral_atm'] ?? ''); ?></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="descripcion_radiografica">Descripción Radiográfica:</label>
+                                            <textarea class="form-control" id="descripcion_radiografica" name="descripcion_radiografica"><?php echo htmlspecialchars($medical_report['descripcion_radiografica'] ?? ''); ?></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="diagnostico_periodontal">Diagnóstico Periodontal:</label>
+                                            <textarea class="form-control" id="diagnostico_periodontal" name="diagnostico_periodontal"><?php echo htmlspecialchars($medical_report['diagnostico_periodontal'] ?? ''); ?></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="plan_tratamiento">Plan de Tratamiento:</label>
+                                            <textarea class="form-control" id="plan_tratamiento" name="plan_tratamiento"><?php echo htmlspecialchars($medical_report['plan_tratamiento'] ?? ''); ?></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="pronostico">Pronóstico:</label>
+                                            <textarea class="form-control" id="pronostico" name="pronostico"><?php echo htmlspecialchars($medical_report['pronostico'] ?? ''); ?></textarea>
+                                        </div>
                                         <div class="form-group custom-file-upload">
                                             <label for="radiografia">Radiografía:</label>
                                             <div class="file-upload-wrapper">
@@ -346,13 +733,11 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
                                             </div>
                                             <?php if (isset($medical_report['radiografia']) && $medical_report['radiografia']) { ?>
                                                 <div class="image-preview">
-                                                    <img src="../uploads/radiografias/<?php echo $medical_report['radiografia']; ?>" class="uploaded-image" alt="Radiografía">
+                                                    <img src="../uploads/radiografias/<?php echo htmlspecialchars($medical_report['radiografia']); ?>" class="uploaded-image" alt="Radiografía">
                                                     <button type="button" class="remove-image" data-type="radiografia"><i class="fas fa-trash-alt"></i> Eliminar</button>
                                                 </div>
                                             <?php } ?>
                                         </div>
-
-                                        <!-- Sección de Foto de la Boca -->
                                         <div class="form-group custom-file-upload">
                                             <label for="foto_boca">Foto de la Boca:</label>
                                             <div class="file-upload-wrapper">
@@ -362,43 +747,35 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
                                             </div>
                                             <?php if (isset($medical_report['foto_boca']) && $medical_report['foto_boca']) { ?>
                                                 <div class="image-preview">
-                                                    <img src="../uploads/fotos_boca/<?php echo $medical_report['foto_boca']; ?>" class="uploaded-image" alt="Foto de la Boca">
+                                                    <img src="../uploads/fotos_boca/<?php echo htmlspecialchars($medical_report['foto_boca']); ?>" class="uploaded-image" alt="Foto de la Boca">
                                                     <button type="button" class="remove-image" data-type="foto_boca"><i class="fas fa-trash-alt"></i> Eliminar</button>
                                                 </div>
                                             <?php } ?>
                                         </div>
-
                                         <div class="form-group">
                                             <label for="evolucion">Evolución:</label>
-                                            <textarea class="form-control" id="evolucion" name="evolucion"><?php echo $medical_report['evolucion'] ?? ''; ?></textarea>
+                                            <textarea class="form-control" id="evolucion" name="evolucion"><?php echo htmlspecialchars($medical_report['evolucion'] ?? ''); ?></textarea>
                                         </div>
                                         <div class="form-group">
                                             <label for="diagnostico">Diagnóstico:</label>
-                                            <textarea class="form-control" id="diagnostico" name="diagnostico"><?php echo $medical_report['diagnostico'] ?? ''; ?></textarea>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="plan_tratamiento">Plan de Tratamiento:</label>
-                                            <textarea class="form-control" id="plan_tratamiento" name="plan_tratamiento"><?php echo $medical_report['plan_tratamiento'] ?? ''; ?></textarea>
+                                            <textarea class="form-control" id="diagnostico" name="diagnostico"><?php echo htmlspecialchars($medical_report['diagnostico'] ?? ''); ?></textarea>
                                         </div>
                                         <div class="form-group">
                                             <label for="costo">Costo:</label>
-                                            <input type="number" class="form-control" id="costo" name="costo" value="<?php echo $medical_report['costo'] ?? ''; ?>">
+                                            <input type="number" class="form-control" id="costo" name="costo" value="<?php echo htmlspecialchars($medical_report['costo'] ?? ''); ?>" step="0.01">
                                         </div>
-
-                                        <div class="button-container">
-                                            <form method="POST" action="" enctype="multipart/form-data">
-                                                <!-- ... (otros campos del formulario) ... -->
-                                                <button type="submit" name="update_medical" class="btn btn-custom-primary">
-                                                    <i class="fas fa-save"></i> Guardar Informe Médico
-                                                </button>
-                                            </form>
-                                            <form action="generate_informe_pdf.php" method="post">
-                                                <input type="hidden" name="patient_id" value="<?php echo $patient_id; ?>">
-                                                <button type="submit" class="btn btn-custom-secondary">
-                                                    <i class="fas fa-file-pdf"></i> Guardar Informe en PDF
-                                                </button>
-                                            </form>
+                                        <div class="button-container custom-button-container">
+                                            <button type="submit" name="update_medical" class="btn btn-save">
+                                                <i class="fas fa-save"></i> Guardar Informe Médico
+                                            </button>
                                         </div>
+                                    </form>
+                                    <form action="generate_informe_pdf.php" method="post" class="custom-button-container">
+                                        <input type="hidden" name="patient_id" value="<?php echo htmlspecialchars($patient_id); ?>">
+                                        <button type="submit" class="btn btn-pdf">
+                                            <i class="fas fa-file-pdf"></i> Guardar Informe en PDF
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -408,13 +785,30 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
         </div>
     </main>
 
-    <!-- Scripts -->
     <script src="../src/js/jquery.js"></script>
     <script src="../src/css/lib/bootstrap/js/bootstrap.min.js"></script>
     <script src="../src/js/admin.js"></script>
-
-
     <script>
+        // Contador de caracteres para el campo "Otros"
+        document.addEventListener('DOMContentLoaded', () => {
+            const historiaOtros = document.getElementById('historia_otros');
+            const charCount = document.getElementById('char_count');
+            const maxLength = parseInt(historiaOtros.getAttribute('maxlength')); // Obtener el maxlength (17)
+
+            // Función para actualizar el contador
+            const updateCharCount = () => {
+                const remaining = maxLength - historiaOtros.value.length;
+                charCount.textContent = remaining;
+                charCount.classList.toggle('low', remaining < 5); // Añadir clase 'low' si quedan menos de 5 caracteres
+            };
+
+            // Actualizar al cargar la página
+            updateCharCount();
+
+            // Actualizar al escribir
+            historiaOtros.addEventListener('input', updateCharCount);
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             // Cerrar alertas
             (document.querySelectorAll('.alert .delete') || []).forEach(($delete) => {
@@ -424,7 +818,7 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
                 });
             });
 
-            // Mostrar el nombre del archivo seleccionado
+            // Mostrar nombre del archivo seleccionado
             document.querySelectorAll('.custom-file-input').forEach(input => {
                 input.addEventListener('change', function() {
                     const fileName = this.files[0]?.name || 'Selecciona un archivo...';
@@ -444,9 +838,9 @@ $medical_report = mysqli_num_rows($medical_report_result) > 0 ? mysqli_fetch_ass
                         fetch('delete_image.php', {
                                 method: 'POST',
                                 headers: {
-                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                    'Content-Type': 'application/x-www-form-urlencoded'
                                 },
-                                body: `type=${type}&file_name=${fileName}&id_cita=${idCita}`
+                                body: `type=${type}&file_name=${encodeURIComponent(fileName)}&id_cita=${idCita}`
                             })
                             .then(response => response.json())
                             .then(data => {
