@@ -4,7 +4,7 @@ require_once '../php/conexionDB.php';
 require_once '../php/consultas.php';
 
 try {
-    // Verificar si se recibió la acción
+    // Verifica si se recibió la acción
     if (empty($_GET['accion'])) {
         $_SESSION['MensajeTexto'] = "Advertencia: Acción no permitida.";
         $_SESSION['MensajeTipo'] = "is-warning";
@@ -16,7 +16,7 @@ try {
 
     switch ($opcion) {
         case 'UDT':
-            // Validar y sanitizar los datos de entrada
+            // Sanitizar y validar datos de entrada
             $id = filter_var($_POST['id'], FILTER_SANITIZE_NUMBER_INT);
             $nombre = mysqli_real_escape_string($link, trim($_POST['name']));
             $apellido = mysqli_real_escape_string($link, trim($_POST['apellido']));
@@ -24,37 +24,40 @@ try {
             $sexo = mysqli_real_escape_string($link, trim($_POST['sexo']));
             $fecha = mysqli_real_escape_string($link, trim($_POST['nacimiento']));
             $correo = mysqli_real_escape_string($link, trim($_POST['correo']));
-            $clave = $_POST['clave'];
+            $clave = trim($_POST['clave']);
 
-            // Encriptar clave si es necesario
-            $claveEncriptada = !empty($clave) ? password_hash($clave, PASSWORD_BCRYPT) : null;
-
-            // Construir la consulta SQL con seguridad
+            // Preparar consulta base para actualización
             $query = "UPDATE pacientes SET 
-                        nombre = ?, 
-                        apellido = ?, 
-                        telefono = ?,  
-                        sexo = ?,  
-                        fecha_nacimiento = ?,  
-                        correo_electronico = ?";
+                      nombre = ?, 
+                      apellido = ?, 
+                      telefono = ?,  
+                      sexo = ?,  
+                      fecha_nacimiento = ?,  
+                      correo_electronico = ?";
             $params = [$nombre, $apellido, $telefono, $sexo, $fecha, $correo];
+            $paramTypes = "ssssss";
 
-            if ($claveEncriptada) {
+            // Si se proporciona una nueva contraseña, hashearla y añadirla a la consulta
+            if (!empty($clave)) {
+                $claveEncriptada = password_hash($clave, PASSWORD_BCRYPT);
                 $query .= ", clave = ?";
                 $params[] = $claveEncriptada;
+                $paramTypes .= "s";
             }
 
+            // Añadir condición WHERE para el ID
             $query .= " WHERE id_paciente = ?";
             $params[] = $id;
+            $paramTypes .= "i";
 
-            // Preparar la consulta segura con `mysqli_stmt`
+            // Preparar y ejecutar la consulta con parámetros dinámicos
             $stmt = mysqli_prepare($link, $query);
+            if (!$stmt) {
+                throw new Exception("Error preparando la consulta: " . mysqli_error($link));
+            }
 
-            // Construcción de los tipos de datos para `bind_param`
-            $paramTypes = str_repeat('s', count($params) - 1) . 'i';
             mysqli_stmt_bind_param($stmt, $paramTypes, ...$params);
 
-            // Ejecutar la consulta
             if (mysqli_stmt_execute($stmt)) {
                 $_SESSION['MensajeTexto'] = "Registro actualizado con éxito.";
                 $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-info text-white";
@@ -63,7 +66,6 @@ try {
                 $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
             }
 
-            // Cerrar la conexión
             mysqli_stmt_close($stmt);
             mysqli_close($link);
 
@@ -77,9 +79,11 @@ try {
             exit();
     }
 } catch (Exception $e) {
+    // Registrar excepciones en el log del servidor para depuración
     error_log("Excepción no controlada: " . $e->getMessage());
     echo "Ha ocurrido un error. Estamos trabajando en corregir esta situación.";
 } catch (Error $e) {
+    // Registrar errores en el log del servidor
     error_log("Error no controlado: " . $e->getMessage());
     echo "Ha ocurrido un error. Estamos trabajando en corregir esta situación.";
 }

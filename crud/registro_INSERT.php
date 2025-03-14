@@ -2,32 +2,31 @@
 require_once '../php/conexionDB.php';
 require_once '../php/consultas.php';
 
+if (!isset($_GET['opciones'])) {
+    die("Advertencia: Acción no permitida.");
+}
+
+$opcion = $_GET['opciones'];
+
+function insertarUsuario($link, $query, $params) {
+    $stmt = mysqli_prepare($link, $query);
+    mysqli_stmt_bind_param($stmt, str_repeat("s", count($params)), ...$params);
+    $success = mysqli_stmt_execute($stmt);
+
+    mysqli_stmt_close($stmt);
+    mysqli_close($link);
+
+    if ($success) {
+        header("Location: ../registro.php?success=1");
+        exit;
+    } else {
+        die("Error insertando el contenido: " . mysqli_error($link));
+    }
+}
+
 try {
-    if (!isset($_GET['opciones'])) {
-        die("Advertencia: Acción no permitida.");
-    }
-
-    $opcion = $_GET['opciones'];
-
-    function insertarUsuario($link, $query, $params) {
-        $stmt = mysqli_prepare($link, $query);
-        mysqli_stmt_bind_param($stmt, str_repeat("s", count($params)), ...$params);
-        $success = mysqli_stmt_execute($stmt);
-
-        mysqli_stmt_close($stmt);
-        mysqli_close($link);
-
-        if ($success) {
-            // Redirigir a registro.php con indicador de éxito
-            header("Location: ../registro.php?success=1");
-            exit();
-        } else {
-            die("Error insertando el contenido: " . mysqli_error($link));
-        }
-    }
-
     switch ($opcion) {
-        case 'INS': // Registro de pacientes
+        case 'INS':
             if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ingresar'])) {
                 $nombre = trim(filter_var($_POST['name'], FILTER_SANITIZE_SPECIAL_CHARS));
                 $apellido = trim(filter_var($_POST['apellido'], FILTER_SANITIZE_SPECIAL_CHARS));
@@ -44,7 +43,7 @@ try {
             }
             break;
 
-        case 'INSDOCT': // Registro de doctores
+        case 'INSDOCT':
             if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar'])) {
                 $nombre = trim(filter_var($_POST['name'], FILTER_SANITIZE_SPECIAL_CHARS));
                 $apellido = trim(filter_var($_POST['apellido'], FILTER_SANITIZE_SPECIAL_CHARS));

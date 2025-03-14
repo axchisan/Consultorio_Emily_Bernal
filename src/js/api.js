@@ -16,8 +16,8 @@ export async function registerUser(user) {
   const data = await response.json();
 
   if (data.redirect) {
-    // Pequeño retraso para asegurar que la sesión se guarde
-    await new Promise(resolve => setTimeout(resolve, 500)); // 500ms
+    
+    await new Promise(resolve => setTimeout(resolve, 500)); 
     window.location.href = data.redirect; 
   }
 }

@@ -1,28 +1,26 @@
 <?php
-include_once('php/conexionDB.php');
-include_once('php/consultas.php');
+include_once 'php/conexionDB.php';
+include_once 'php/consultas.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Obtener datos de Google si existen
+// Obtener y procesar datos de Google si existen
 $google_email = $_SESSION['google_email'] ?? '';
 $full_name = $_SESSION['google_name'] ?? '';
-
-// Separar nombre y apellido en dos
 $name_parts = explode(' ', trim($full_name));
 $half = (int) ceil(count($name_parts) / 2);
 $google_name = implode(' ', array_slice($name_parts, 0, $half));
 $google_apellido = implode(' ', array_slice($name_parts, $half));
 ?>
-<!DOCTYPE html>
-<html>
 
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <title>Consultorio Odontologico EMILY BERNAL</title>
+    <title>Consultorio Odontológico EMILY BERNAL</title>
     <link rel="icon" href="./src/img/logo.png" type="image/png" />
     <link rel="stylesheet" href="src/css/login.css" />
     <link href="src/css/lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css" />
@@ -33,7 +31,7 @@ $google_apellido = implode(' ', array_slice($name_parts, $half));
     <div class="container login-container">
         <div class="row">
             <div class="col-md-6 ads">
-                <h1><span id="fl">Consultorio</span><span id="sl">Odontologico</span></h1>
+                <h1><span id="fl">Consultorio</span><span id="sl">Odontológico</span></h1>
             </div>
             <div class="col-md-6 login-form">
                 <div class="profile-img">
@@ -44,11 +42,11 @@ $google_apellido = implode(' ', array_slice($name_parts, $half));
                     <div class="form-group">
                         <div class="row">
                             <div class="col-md-4">
-                                <label for="name" class="font-weight-bold">Nombre </label>
+                                <label for="name" class="font-weight-bold">Nombre</label>
                                 <input type="text" class="form-control" name="name" placeholder="Nombre" value="<?php echo htmlspecialchars($google_name); ?>" required>
                             </div>
                             <div class="col-md-4">
-                                <label for="apellido" class="font-weight-bold">Apellido </label>
+                                <label for="apellido" class="font-weight-bold">Apellido</label>
                                 <input type="text" class="form-control" name="apellido" placeholder="Apellido" value="<?php echo htmlspecialchars($google_apellido); ?>" required>
                             </div>
                             <div class="col-md-4">
@@ -67,7 +65,7 @@ $google_apellido = implode(' ', array_slice($name_parts, $half));
                                 <input class="form-control" type="date" name="nacimiento" placeholder="Fecha de nacimiento" required>
                             </div>
                             <div class="col-md-6">
-                                <label for="cell" class="font-weight-bold">Teléfono </label>
+                                <label for="cell" class="font-weight-bold">Teléfono</label>
                                 <input type="text" class="form-control" name="cell" placeholder="Teléfono" required>
                             </div>
                         </div>
@@ -77,7 +75,7 @@ $google_apellido = implode(' ', array_slice($name_parts, $half));
                         <input type="email" class="form-control" name="correo" placeholder="Correo electrónico" value="<?php echo htmlspecialchars($google_email); ?>" <?php echo empty($google_email) ? '' : 'readonly'; ?> required>
                     </div>
                     <div class="form-group">
-                        <label for="password" class="font-weight-bold">Contraseña </label>
+                        <label for="password" class="font-weight-bold">Contraseña</label>
                         <input type="password" class="form-control" id="password" name="password" placeholder="Contraseña" required>
                         <button type="button" class="toggle-password" data-target="password">
                             <i class="fas fa-eye"></i>
@@ -89,7 +87,7 @@ $google_apellido = implode(' ', array_slice($name_parts, $half));
                         </button>
                     </div>
                     <div class="form-group">
-                        <a href="index.php"> <i class="fas fa-history"></i> Atrás </a>
+                        <a href="index.php"><i class="fas fa-history"></i> Atrás</a>
                     </div>
                 </form>
 
@@ -104,8 +102,9 @@ $google_apellido = implode(' ', array_slice($name_parts, $half));
 
     <script src="src/js/tooglePassword.js"></script>
     <script>
+        // Manejo de cierre de notificaciones
         document.addEventListener('DOMContentLoaded', () => {
-            (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
+            document.querySelectorAll('.notification .delete').forEach(($delete) => {
                 const $notification = $delete.parentNode;
                 $delete.addEventListener('click', () => {
                     $notification.parentNode.removeChild($notification);
@@ -114,8 +113,8 @@ $google_apellido = implode(' ', array_slice($name_parts, $half));
         });
     </script>
 </body>
-
 </html>
+
 <?php
 // Limpiar variables de sesión después de usarlas
 unset($_SESSION['google_email']);

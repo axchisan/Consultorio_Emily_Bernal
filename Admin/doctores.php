@@ -1,46 +1,35 @@
 <?php
+session_start();
 include_once('../php/conexionDB.php');
 include_once('../php/consultas.php');
-$resultado = MostrarEspecialidad($link); //mostrar las consultas
 
-if (isset($_SESSION['id_doctor'])) {
-    $vUsuario = $_SESSION['id_doctor'];
-    $row = consultarDoctor($link, $vUsuario);
-} else {
-    $_SESSION['MensajeTexto'] = "Error acceso al sistema  no registrado.";
+// Validar sesión del doctor
+if (!isset($_SESSION['id_doctor'])) {
+    $_SESSION['MensajeTexto'] = "Error acceso al sistema: Sesión no iniciada.";
     $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
-    header("Location: ./index.php");
+    header("Location: ../index.php");
+    exit();
 }
+
+$vUsuario = $_SESSION['id_doctor'];
+$row = consultarDoctor($link, $vUsuario);
+$resultado = MostrarEspecialidad($link); // Obtener lista de especialidades
 ?>
+
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="es">
 <head>
-    <!-- ICONO -->
-    <link rel="icon" href="../src/img/logo.png" type="image/png" />
-    <!-- Bootstrap CSS -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="icon" href="../src/img/logo.png" type="image/png">
     <link rel="stylesheet" href="../src/css/lib/bootstrap/css/bootstrap.min.css">
-
-    <!-- Style -->
     <link rel="stylesheet" href="../src/css/admin.css">
     <link rel="stylesheet" href="../src/css/custom_styles.css">
-
-
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="../src/css/lib/fontawesome/css/all.css">
-
-    <!-- jQuery UI -->
     <link href="https://code.jquery.com/ui/1.10.3/themes/redmond/jquery-ui.css" rel="stylesheet" media="screen">
-    <title>Emily Bernal</title>
-    <style>
-
-    </style>
+    <title>Emily Bernal - Dentistas</title>
 </head>
-
 <body>
-
-
-
     <aside class="sidebar">
         <div class="toggle">
             <a href="#" class="burger js-menu-toggle" data-toggle="collapse" data-target="#main-navbar">
@@ -49,154 +38,113 @@ if (isset($_SESSION['id_doctor'])) {
         </div>
         <div class="side-inner">
             <div class="profile">
-                <?php
-                if ($row['sexo'] == 'Masculino') {
-                ?>
+                <?php if ($row['sexo'] == 'Masculino') { ?>
                     <img src="../src/img/odontologo.png" class="rounded-circle" width="150">
-
-                <?php
-                } elseif ($row['sexo'] == 'Femenino') {
-                ?>
+                <?php } elseif ($row['sexo'] == 'Femenino') { ?>
                     <img src="../src/img/odontologa.png" class="rounded-circle" width="150">
-                <?php
-                }
-                ?>
+                <?php } ?>
                 <h3 class="name"><?php echo utf8_decode($row['nombreD'] . ' ' . $row['apellido']); ?></h3>
-                <span class="country">Barbosa Santander </span>
+                <span class="country">Barbosa Santander</span>
             </div>
             <div class="nav-menu">
                 <ul>
-                    <li class="accordion">
-
-                    <li><a href="inicioAdmin.php"><span class="icon-location-arrow mr-3"></span> <i class="far fa-calendar-check"></i>
-                            Citas
-                            pendientes
-                        </a></li>
-                    <li><a href="doctores.php"><span class="icon-location-arrow mr-3"></span><i class="fas fa-user-md"></i>
-                            Dentistas</a></li>
-                    <li><a href="calendar.php"><span class="icon-pie-chart mr-3"></span> <i class="far fa-calendar-alt"></i>
-                            Calendario</a>
-                    </li>
-                    <li><a href="../php/cerrar.php"><span class="icon-sign-out mr-3"></span><i class="fas fa-sign-out-alt"></i> Cerrar
-                            sesión </a>
-                    </li>
+                    <li><a href="inicioAdmin.php"><span class="icon-location-arrow mr-3"></span><i class="far fa-calendar-check"></i> Citas</a></li>
+                    <li class="active"><a href="doctores.php"><span class="icon-location-arrow mr-3"></span><i class="fas fa-user-md"></i> Dentistas</a></li>
+                    <li><a href="calendar.php"><span class="icon-pie-chart mr-3"></span><i class="far fa-calendar-alt"></i> Calendario</a></li>
+                    <li><a href="historia_clinica.php"><span class="icon-pie-chart mr-3"></span><i class="far fa-calendar-alt"></i> Historia Clínica</a></li>
+                    <li><a href="../php/cerrar.php"><span class="icon-sign-out mr-3"></span><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a></li>
                 </ul>
             </div>
         </div>
-
     </aside>
 
-
     <main class="bg bg-white">
-        <div class="site-section ">
+        <div class="site-section">
             <div class="container">
                 <div class="row justify-content-center">
                     <div class="col-md-12">
                         <div class="content-box-large">
-                            <div>
-                                <ol class=" breadcrumb bg-white">
-                                    <li class="breadcrumb-item">
-                                        <a href="./inicioAdmin.php">Inicio</a>
-                                    </li>
-                                    <li class="breadcrumb-item active">
-                                        Dentistas
-                                    </li>
-                                </ol>
-
-                            </div>
+                            <ol class="breadcrumb bg-white">
+                                <li class="breadcrumb-item"><a href="./inicioAdmin.php">Inicio</a></li>
+                                <li class="breadcrumb-item active">Dentistas</li>
+                            </ol>
                             <div class="panel-body">
                                 <div class="row">
                                     <div class="col-md-4">
                                         <?php if (isset($_SESSION['MensajeTexto'])) { ?>
-                                            <div class="alert <?php echo $_SESSION['MensajeTipo'] ?>" role="alert">
-                                                <?php echo $_SESSION['MensajeTexto'] ?>
+                                            <div class="alert <?php echo $_SESSION['MensajeTipo']; ?>" role="alert">
+                                                <?php echo $_SESSION['MensajeTexto']; ?>
                                                 <button class="delete"><i class="fa fa-times"></i></button>
                                             </div>
-
-                                        <?php $_SESSION['MensajeTexto'] = null;
+                                            <?php
+                                            $_SESSION['MensajeTexto'] = null;
                                             $_SESSION['MensajeTipo'] = null;
-                                        }
-                                        ?>
+                                            ?>
+                                        <?php } ?>
                                     </div>
-                                    <div class="container ">
+                                    <div class="container">
                                         <form action="../crud/registro_INSERT.php?opciones=INSDOCT" method="POST" enctype="multipart/form-data" autocomplete="off">
-                                            <div class="p-3 mb-2 bg-primary text-white text-center">Agregar un nuevo
-                                                odontólogo</div>
-                                            <!-- primera fila -->
-                                            <div class=" form-group">
+                                            <div class="p-3 mb-2 bg-primary text-white text-center">Agregar un nuevo odontólogo</div>
+                                            <div class="form-group">
                                                 <div class="row">
-                                                    <!-- primera columna -->
                                                     <div class="col-md-4">
                                                         <label for="nombres">Nombres</label>
                                                         <input class="form-control" type="text" name="name" placeholder="Nombres" required>
                                                     </div>
-                                                    <!-- segunda columna -->
                                                     <div class="col-md-4">
-                                                        <label for="apellidos">Apellidos </label>
+                                                        <label for="apellidos">Apellidos</label>
                                                         <input class="form-control" type="text" name="apellido" placeholder="Apellidos" required>
                                                     </div>
-                                                    <!-- tercera columna -->
                                                     <div class="col-md-4">
                                                         <label for="nacimiento">Fecha de nacimiento</label>
-                                                        <input class="form-control" type="date" name="nacimiento" placeholder="Fecha de nacimiento" required>
+                                                        <input class="form-control" type="date" name="nacimiento" required>
                                                     </div>
                                                 </div>
                                             </div>
-
-                                            <!-- segunda fila -->
                                             <div class="form-group">
-                                                <!-- primera comumna -->
                                                 <div class="row">
                                                     <div class="col-md-4">
                                                         <label for="correo">Correo electrónico</label>
-                                                        <input class="form-control" type="text" name="correo" placeholder="Correo Electrónico" required>
+                                                        <input class="form-control" type="email" name="correo" placeholder="Correo Electrónico" required>
                                                     </div>
-
-                                                    <!-- segunda columna -->
                                                     <div class="col-md-4">
                                                         <label for="clave">Contraseña</label>
                                                         <input class="form-control" type="password" name="clave" id="clave" placeholder="Contraseña" required>
                                                     </div>
                                                     <div class="col-md-4">
-                                                        <label for="clave"> Confirmar Contraseña</label>
-                                                        <input class="form-control" type="password" name="clave" id="clave2" placeholder="Contraseña" required>
+                                                        <label for="clave2">Confirmar Contraseña</label>
+                                                        <input class="form-control" type="password" name="clave2" id="clave2" placeholder="Contraseña" required>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <!-- tercera fila -->
                                             <div class="form-group">
                                                 <div class="row">
-                                                    <!-- primera columna -->
                                                     <div class="col-md-4">
                                                         <label for="sexo">Sexo</label>
                                                         <select class="form-control" name="sexo" required>
-                                                            <option>Masculino</option>
-                                                            <option>Femenino</option>
-
-                                                        </select>
-                                                    </div>
-                                                    <!-- segunda columna -->
-                                                    <div class="col-md-4">
-                                                        <label for="especialidad">Especialidad </label> <br>
-                                                        <select name="especialidad" id="especialidad" required>
-                                                            <?php while ($row = mysqli_fetch_array($resultado, MYSQLI_ASSOC)) {
-                                                                echo "<option value = " . $row['id_especialidad'] . ">" . $row['tipo'] . "</option>";
-                                                            }   ?>
+                                                            <option value="Masculino">Masculino</option>
+                                                            <option value="Femenino">Femenino</option>
                                                         </select>
                                                     </div>
                                                     <div class="col-md-4">
-                                                        <label for="clave">Teléfono </label>
+                                                        <label for="especialidad">Especialidad</label>
+                                                        <select class="form-control" name="especialidad" id="especialidad" required>
+                                                            <?php while ($row = mysqli_fetch_array($resultado, MYSQLI_ASSOC)) { ?>
+                                                                <option value="<?php echo $row['id_especialidad']; ?>"><?php echo $row['tipo']; ?></option>
+                                                            <?php } ?>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="cell">Teléfono</label>
                                                         <input class="form-control" type="text" name="cell" placeholder="Teléfono">
                                                     </div>
-
                                                 </div>
-
-                                                <br> <button class="btn btn-success btn-lg " type="submit" name="guardar" id="Guardar" value="Guardar" ">
-                                                    <i class=" far fa-save"></i> Guardar
-                                                </button>
+                                            </div>
+                                            <button class="btn btn-success btn-lg" type="submit" name="guardar" value="Guardar">
+                                                <i class="far fa-save"></i> Guardar
+                                            </button>
                                         </form>
                                     </div>
-
                                 </div>
                             </div>
                         </div>
@@ -206,23 +154,15 @@ if (isset($_SESSION['id_doctor'])) {
         </div>
     </main>
 
-
-
     <script src="../src/js/jquery.js"></script>
-
-    <!-- <script src="../src/css/lib/bootstrap/js/bootstrap.min.js"></script> -->
-    <script src="../src/js/admin.js"></script>
-    <!-- jQuery UI -->
     <script src="https://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="../src/css/lib/bootstrap/js/bootstrap.min.js"></script>
-
-    <script src="../src/js/calendar.js"></script>
+    <script src="../src/js/admin.js"></script>
+    <!-- Script para cerrar alertas dinámicamente -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             (document.querySelectorAll('.alert .delete') || []).forEach(($delete) => {
                 const $notification = $delete.parentNode;
-
                 $delete.addEventListener('click', () => {
                     $notification.parentNode.removeChild($notification);
                 });
@@ -230,5 +170,4 @@ if (isset($_SESSION['id_doctor'])) {
         });
     </script>
 </body>
-
 </html>
