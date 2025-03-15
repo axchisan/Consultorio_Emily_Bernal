@@ -2,12 +2,14 @@
 session_start();
 include_once './php/conexionDB.php';
 include_once './php/consultas.php';
- 
+
 $resultado = MostrarConsultas($link);
 $resultadoDentistas = MostrarDentistas($link);
 
 // Validar sesión y token
 if (!isset($_SESSION['id_paciente']) || !isset($_SESSION['session_token'])) {
+    $_SESSION['MensajeTexto'] = "Por favor inicia sesión para acceder a esta página.";
+    $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-warning text-white";
     header("Location: ./index.php");
     exit();
 }
@@ -25,8 +27,26 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
 }
 ?>
 
+<!-- Mostrar mensajes si existen -->
+<?php if (isset($_SESSION['MensajeTexto']) && isset($_SESSION['MensajeTipo'])): ?>
+    <div class="<?php echo $_SESSION['MensajeTipo']; ?>" id="mensaje">
+        <?php 
+        echo $_SESSION['MensajeTexto'];
+        // Limpiar mensajes después de mostrarlos
+        unset($_SESSION['MensajeTexto']);
+        unset($_SESSION['MensajeTipo']);
+        ?>
+    </div>
+    <script>
+        setTimeout(function() {
+            document.getElementById('mensaje').style.display = 'none';
+        }, 5000);
+    </script>
+<?php endif; ?>
+
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -62,9 +82,9 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                     <p><?php echo ($row['sexo'] == 'Masculino') ? "Bienvenido {$row['nombre']} {$row['apellido']}" : "Bienvenida {$row['nombre']} {$row['apellido']}"; ?></p>
                 </div>
                 <div class="col-md-8 col-sm-10">
-                    <span class="phone-icon"><i class="fa fa-phone"></i> 310-5547320</span>
-                    <span class="date-icon"><i class="fa fa-calendar-plus-o"></i> 8:00 AM - 6:00 PM (Lunes-Viernes)</span>
-                    <span class="email-icon"><i class="fa fa-envelope-o"></i> <a href="#">emilybernal@hotmail.com</a></span>
+                    <span class="phone-icon"><i class="fa fa-phone"></i> 3105547320</span>
+                    <span class="date-icon"><i class="fa fa-calendar-plus-o"></i> 8:30 AM - 6:00 PM (Lunes-Sabado)</span>
+                    <span class="email-icon"><i class="fa fa-envelope-o"></i> <a href="mailto:emilybernal902@gmail.com">emilybernal902@gmail.com</a></span>
                     <span><i class="fa fa-sign-out"></i> <a href="./php/cerrar.php">Cerrar Sesión</a></span>
                 </div>
             </div>
@@ -104,7 +124,7 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                     <?php echo $_SESSION['MensajeTexto'] ?>
                     <button class="delete"><i class="fa fa-times"></i></button>
                 </div>
-                <?php
+            <?php
                 $_SESSION['MensajeTexto'] = null;
                 $_SESSION['MensajeTipo'] = null;
             } ?>
@@ -157,13 +177,17 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                         <h2 class="wow fadeInUp" data-wow-delay="0.6s">Bienvenido al Consultorio</h2>
                         <div class="wow fadeInUp" data-wow-delay="0.8s">
                             <p>En esta clínica se ofrecen servicios odontológicos a niños y adultos en diferentes ramas: Diagnóstico, Emergencias, Radiología, Periodoncia, Operatoria Dental, Odontopediatría, Endodoncia, Prótesis (Fija, Parcial Removible y Total), Cirugía y Ortodoncia.</p>
+                            <h5>Por qué elegirnos</h5>
+                            <p>Somos un consultorio odontológico enfocados en mantener su salud oral y su estética dental. Brindamos acceso a un modelo de odontología de calidad con especialistas en cada rama, materiales dentales de excelente calidad y tecnología adecuada para mejorar la experiencia durante el tratamiento.</p>
+                            <p>-Agenda tu valoración odontológica SIN COSTO</p>
+                            <p>-Selecciona la forma de pago que más se ajuste a tu bolsillo, con facilidad de pago en nuestros tratamientos y diferentes alternativas.</p>
                             <h5>Visión</h5>
                             <p>Servicios odontológicos en Santander y Boyacá, logrando expansión a otros municipios, mejora continua de procesos y garantizando calidad y profesionalidad.</p>
                             <h5>Misión</h5>
                             <p>Brindar un servicio de excelencia en salud oral, basado en conocimientos, alta tecnología y calidez humana que cubran las necesidades y expectativas de nuestros pacientes.</p>
                         </div>
                         <figure class="profile wow fadeInUp" data-wow-delay="1s">
-                            <img src="src/img/author-image.jpg" class="img-responsive" alt="">
+                            <img src="src/img/emily-perfil.png" class="img-responsive" alt="">
                             <figcaption>
                                 <h3>Dra. EMILY BERNAL</h3>
                                 <p>Odontóloga general con énfasis clínico en Odontología Biológica y Quirúrgica</p>
@@ -189,11 +213,12 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                     <div class="team-thumb wow fadeInUp" data-wow-delay="0.2s">
                         <img src="src/img/team-image1.jpg" class="img-responsive" alt="">
                         <div class="team-info">
-                            <h3>Esposo</h3>
-                            <p>Odontólogo</p>
+                            <h3>Dr. Jaime Rolón</h3>
+                            <p>Odontólogo general con énfasis en Odontología Biológica y Quirúrgica</p>
+                            <p>Diplomados en Alta Estética</p>
                             <div class="team-contact-info">
-                                <p><i class="fa fa-phone"></i> Celular</p>
-                                <p><i class="fa fa-envelope-o"></i> <a href="#">correo@hotmail.com</a></p>
+                                <p><i class="fa fa-phone"></i> Contacto vía consultorio</p>
+                                <p><i class="fa fa-envelope-o"></i> <a href="#">perfectteeth@gmail.com</a></p>
                             </div>
                         </div>
                     </div>
@@ -202,11 +227,12 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                     <div class="team-thumb wow fadeInUp" data-wow-delay="0.4s">
                         <img src="src/img/team-image2.jpg" class="img-responsive" alt="">
                         <div class="team-info">
-                            <h3>Odontólogos</h3>
-                            <p>Ortodoncista/Endodoncista</p>
+                            <h3>Dr. Kaleth Quuaz</h3>
+                            <p>Odontologo especialista en ortodoncia y ortopedia maxilar </p>
+
                             <div class="team-contact-info">
-                                <p><i class="fa fa-phone"></i> Celular</p>
-                                <p><i class="fa fa-envelope-o"></i> <a href="#">correo</a></p>
+                                <p><i class="fa fa-phone"></i> Contacto vía consultorio</p>
+                                <p><i class="fa fa-envelope-o"></i> <a href="#">perfectteeth@gmail.com</a></p>
                             </div>
                         </div>
                     </div>
@@ -215,11 +241,13 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                     <div class="team-thumb wow fadeInUp" data-wow-delay="0.6s">
                         <img src="src/img/team-image3.jpg" class="img-responsive" alt="">
                         <div class="team-info">
-                            <h3>Odontología</h3>
-                            <p></p>
+                            <h3>Dr. Emily Bernal</h3>
+                            <p>Odontologa general con énfasis clínico en odontología biológica y quirúrgica</p>
+                            <p>Diplomados en Alta Estética</p>
                             <div class="team-contact-info">
-                                <p><i class="fa fa-phone"></i> Teléfono</p>
-                                <p><i class="fa fa-envelope-o"></i> <a href="#">correo</a></p>
+                                <p><i class="fa fa-phone"></i> 3105547320</p>
+                                <p><i class="fa fa-envelope-o"></i> <a href="mailto:emilybernal902@gmail.com">emilybernal902@gmail.com</a></p>
+                                <p><i class="fa fa-instagram"></i> <a href="https://instagram.com/dra.emilybernal?igshid=MzNlNGNkZWQ4Mg==" target="_blank">Instagram</a></p>
                             </div>
                         </div>
                     </div>
@@ -290,7 +318,8 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                             <div class="col-md-12 col-sm-12">
                                 <div class="g-recaptcha" data-sitekey="6LezIuwqAAAAABE2_UWVOaHe9DamIwxKhyXLffyO"></div>
                                 <?php if (isset($_SESSION['CaptchaError'])) { ?>
-                                    <p style="color: red; margin-top: 10px;"><?php echo $_SESSION['CaptchaError']; unset($_SESSION['CaptchaError']); ?></p>
+                                    <p style="color: red; margin-top: 10px;"><?php echo $_SESSION['CaptchaError'];
+                                                                                unset($_SESSION['CaptchaError']); ?></p>
                                 <?php } ?>
                             </div>
                             <div class="col-md-12 col-sm-12">
@@ -339,32 +368,44 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                         <div class="card mb-3">
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-sm-3"><h5 class="mb-0">Nombre</h5></div>
+                                    <div class="col-sm-3">
+                                        <h5 class="mb-0">Nombre</h5>
+                                    </div>
                                     <div class="col-sm-9 text-secondary"><?php echo $row['nombre']; ?></div>
                                 </div>
                                 <hr>
                                 <div class="row">
-                                    <div class="col-sm-3"><h5 class="mb-0">Apellido</h5></div>
+                                    <div class="col-sm-3">
+                                        <h5 class="mb-0">Apellido</h5>
+                                    </div>
                                     <div class="col-sm-9 text-secondary"><?php echo $row['apellido']; ?></div>
                                 </div>
                                 <hr>
                                 <div class="row">
-                                    <div class="col-sm-3"><h5 class="mb-0">Sexo</h5></div>
+                                    <div class="col-sm-3">
+                                        <h5 class="mb-0">Sexo</h5>
+                                    </div>
                                     <div class="col-sm-9 text-secondary"><?php echo $row['sexo']; ?></div>
                                 </div>
                                 <hr>
                                 <div class="row">
-                                    <div class="col-sm-3"><h5 class="mb-0">Correo electrónico</h5></div>
+                                    <div class="col-sm-3">
+                                        <h5 class="mb-0">Correo electrónico</h5>
+                                    </div>
                                     <div class="col-sm-9 text-secondary"><?php echo $row['correo_electronico']; ?></div>
                                 </div>
                                 <hr>
                                 <div class="row">
-                                    <div class="col-sm-3"><h5 class="mb-0">Teléfono</h5></div>
+                                    <div class="col-sm-3">
+                                        <h5 class="mb-0">Teléfono</h5>
+                                    </div>
                                     <div class="col-sm-9 text-secondary"><?php echo $row['telefono']; ?></div>
                                 </div>
                                 <hr>
                                 <div class="row">
-                                    <div class="col-sm-3"><h5 class="mb-0">Fecha de nacimiento</h5></div>
+                                    <div class="col-sm-3">
+                                        <h5 class="mb-0">Fecha de nacimiento</h5>
+                                    </div>
                                     <div class="col-sm-9 text-secondary"><?php echo $row['fecha_nacimiento']; ?></div>
                                 </div>
                             </div>
@@ -389,8 +430,8 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                         <h4 class="wow fadeInUp" data-wow-delay="0.4s">Dirección</h4>
                         <p>Barbosa, Santander</p>
                         <div class="contact-info">
-                            <p><i class="fa fa-phone"></i> 310-5547320</p>
-                            <p><i class="fa fa-envelope-o"></i> <a href="#">correo</a></p>
+                            <p><i class="fa fa-phone"></i> 3105547320</p>
+                            <p><i class="fa fa-envelope-o"></i> <a href="mailto:emilybernal902@gmail.com">correo</a></p>
                         </div>
                     </div>
                 </div>
@@ -402,7 +443,9 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                                 <a href="" target="_blank"><img src="src/img/blanqueamiento.jpg" class="img-responsive" alt=""></a>
                             </div>
                             <div class="stories-info">
-                                <a href="" target="_blank"><h5>Blanqueamiento dental</h5></a>
+                                <a href="" target="_blank">
+                                    <h5>Blanqueamiento dental</h5>
+                                </a>
                                 <span>Fecha</span>
                             </div>
                         </div>
@@ -411,7 +454,9 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                                 <a href="" target="_blank"><img src="src/img/evolucion.jpg" class="img-responsive" alt=""></a>
                             </div>
                             <div class="stories-info">
-                                <a href="" target="_blank"><h5>Evolución de la odontología moderna</h5></a>
+                                <a href="" target="_blank">
+                                    <h5>Evolución de la odontología moderna</h5>
+                                </a>
                                 <span>Fecha</span>
                             </div>
                         </div>
@@ -427,6 +472,7 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                         </div>
                         <ul class="social-icon">
                             <li><a href="https://www.facebook.com" target="_blank" class="fa fa-facebook-square" attr="facebook icon"></a></li>
+                            <li><a href="https://wa.me/message/WZSLOAVLHOAJB1" target="_blank" class="fa fa-whatsapp" attr="whatsapp icon"></a></li>
                         </ul>
                     </div>
                 </div>
@@ -442,6 +488,7 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                             <a>Cookies</a>
                             <a>Avisos legales</a>
                             <a href="https://www.facebook.com" target="_blank">Facebook</a>
+
                         </div>
                     </div>
                     <div class="col-md-2 col-sm-2 text-align-center">
@@ -475,4 +522,5 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
         });
     </script>
 </body>
+
 </html>
