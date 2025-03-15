@@ -3,7 +3,7 @@ session_start();
 include_once('../php/conexionDB.php');
 include_once('../php/consultas.php');
 
-// Validar sesión del doctor
+// Validar sesión del doctor (probablemente un administrador)
 if (!isset($_SESSION['id_doctor'])) {
     $_SESSION['MensajeTexto'] = "Error acceso al sistema: Sesión no iniciada.";
     $_SESSION['MensajeTipo'] = "p-3 mb-2 bg-danger text-white";
@@ -15,6 +15,25 @@ $vUsuario = $_SESSION['id_doctor'];
 $row = consultarDoctor($link, $vUsuario);
 $resultado = MostrarEspecialidad($link); // Obtener lista de especialidades
 ?>
+
+<!-- Mostrar mensajes si existen -->
+<?php if (isset($_SESSION['MensajeTexto']) && isset($_SESSION['MensajeTipo'])): ?>
+    <div class="<?php echo $_SESSION['MensajeTipo']; ?>" id="mensaje">
+        <?php 
+        echo $_SESSION['MensajeTexto'];
+        // Limpiar mensajes después de mostrarlos
+        unset($_SESSION['MensajeTexto']);
+        unset($_SESSION['MensajeTipo']);
+        ?>
+    </div>
+    <script>
+        setTimeout(function() {
+            document.getElementById('mensaje').style.display = 'none';
+        }, 5000);
+    </script>
+<?php endif; ?>
+
+
 
 <!DOCTYPE html>
 <html lang="es">
