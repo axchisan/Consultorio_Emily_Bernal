@@ -111,7 +111,7 @@ if (isset($_POST['date']) && isset($_POST['id_doctor']) && isset($_POST['action'
                                 </div>
                                 <p>Si tienes preguntas, contáctanos:</p>
                                 <ul style='list-style: none; padding: 0;'>
-                                    <li><strong>Teléfono:</strong> +57 123 456 7890</li>
+                                    <li><strong>Teléfono:</strong> +573105547320</li>
                                     <li><strong>WhatsApp:</strong> <a href='https://wa.me/message/WZSLOAVLHOAJB1'>Contactar a la Dra. Emily Bernal</a></li>
                                     <li><strong>Correo:</strong> soporte@perfectteeth.com</li>
                                 </ul>
