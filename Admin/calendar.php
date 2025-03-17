@@ -1,7 +1,7 @@
 <?php
 
 
-session_start(); 
+session_start();
 include_once('../php/conexionDB.php');
 include_once('../php/consultas.php');
 
@@ -91,11 +91,22 @@ $stmtAppointments->close();
                 <div class="modal-header" style="background-color: #6f42c1; color: white;">
                     <h5 class="modal-title" id="confirmationModalLabel">Confirmación</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
+                        <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body" id="confirmationMessage">
                     ¿Desea marcar este día como no disponible?
+                </div>
+                <!-- Indicador de carga -->
+                <div class="modal-body" id="loadingIndicator" style="display: none;">
+                    <div class="loading-container">
+                        <div class="spinner">
+                            <div class="circle circle-1"></div>
+                            <div class="circle circle-2"></div>
+                            <div class="circle circle-3"></div>
+                        </div>
+                        <p class="loading-text">Procesando, por favor espera...</p>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
@@ -112,7 +123,7 @@ $stmtAppointments->close();
                 <div class="modal-header" style="background-color: #6f42c1; color: white;">
                     <h5 class="modal-title" id="alertModalLabel">Notificación</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
+                        <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body" id="alertMessage">
@@ -252,13 +263,13 @@ $stmtAppointments->close();
                     <?php
                     while ($row1 = mysqli_fetch_array($resultadoDentistas)) {
                     ?> {
-                        id: '<?php echo $row1['id_cita']; ?>',
-                        title: '<?php echo htmlspecialchars($row1['tipo'], ENT_QUOTES, 'UTF-8'); ?>',
-                        description: '<?php echo 'El paciente ' . htmlspecialchars($row1['nombre'], ENT_QUOTES, 'UTF-8') . ' ha realizado una consulta de ' . htmlspecialchars($row1['tipo'], ENT_QUOTES, 'UTF-8') . ' con el doctor ' . htmlspecialchars($row1['nombreD'], ENT_QUOTES, 'UTF-8') . '.' . '<br>' . 'Fecha de la cita: ' . htmlspecialchars($row1['fecha_cita'], ENT_QUOTES, 'UTF-8') . '<br>' . 'Hora de la cita: ' . htmlspecialchars($row1['hora_cita'], ENT_QUOTES, 'UTF-8'); ?>',
-                        start: '<?php echo $row1['fecha_cita']; ?>',
-                        textColor: 'White',
-                        display: 'background'
-                    },
+                            id: '<?php echo $row1['id_cita']; ?>',
+                            title: '<?php echo htmlspecialchars($row1['tipo'], ENT_QUOTES, 'UTF-8'); ?>',
+                            description: '<?php echo 'El paciente ' . htmlspecialchars($row1['nombre'], ENT_QUOTES, 'UTF-8') . ' ha realizado una consulta de ' . htmlspecialchars($row1['tipo'], ENT_QUOTES, 'UTF-8') . ' con el doctor ' . htmlspecialchars($row1['nombreD'], ENT_QUOTES, 'UTF-8') . '.' . '<br>' . 'Fecha de la cita: ' . htmlspecialchars($row1['fecha_cita'], ENT_QUOTES, 'UTF-8') . '<br>' . 'Hora de la cita: ' . htmlspecialchars($row1['hora_cita'], ENT_QUOTES, 'UTF-8'); ?>',
+                            start: '<?php echo $row1['fecha_cita']; ?>',
+                            textColor: 'White',
+                            display: 'background'
+                        },
                     <?php
                     }
                     ?>
@@ -281,7 +292,6 @@ $stmtAppointments->close();
                         return app.fecha_cita === dateStr && app.id_doctor === <?php echo $vUsuario; ?>;
                     });
 
-                   
                     $('#confirmationMessage').text(isUnavailable ?
                         'Este día está marcado como no disponible. ¿Desea desmarcarlo?' :
                         (hasAppointments ?
@@ -293,6 +303,12 @@ $stmtAppointments->close();
 
                     $('#confirmAction').off('click').on('click', function() {
                         var action = isUnavailable ? 'remove' : (hasAppointments ? 'cancel' : 'add');
+                        // Mostrar el indicador de carga
+                        $('#loadingIndicator').css('display', 'block').addClass('show');
+                        $('#confirmationMessage').hide();
+                        $('#confirmAction').prop('disabled', true); // Deshabilitar el botón "Confirmar"
+
+                        let startTime = Date.now();
                         $.ajax({
                             url: '../php/toggle_unavailable.php',
                             type: 'POST',
@@ -304,7 +320,6 @@ $stmtAppointments->close();
                             success: function(response) {
                                 $('#confirmationModal').modal('hide');
                                 try {
-                                    // Parsear la respuesta JSON
                                     var res = typeof response === 'string' ? JSON.parse(response) : response;
                                     if (res.status === 'success') {
                                         if (action === 'remove') {
@@ -312,14 +327,11 @@ $stmtAppointments->close();
                                             $(jsEvent.target).css('background-color', '');
                                             $('#alertMessage').text('Día desmarcado como disponible.');
                                         } else if (action === 'cancel') {
-                                            
                                             appointments = appointments.filter(function(app) {
                                                 return app.fecha_cita !== dateStr || app.id_doctor !== <?php echo $vUsuario; ?>;
                                             });
-                                           
                                             unavailableDates.push(dateStr);
                                             $(jsEvent.target).css('background-color', '#ffcccc');
-                                            // Refrescar los eventos del calendario
                                             $('#calendar').fullCalendar('removeEvents', function(event) {
                                                 return event.start.format('YYYY-MM-DD') === dateStr;
                                             });
@@ -340,9 +352,18 @@ $stmtAppointments->close();
                                 }
                             },
                             error: function(xhr, status, error) {
-                                $('#confirmationModal').modal('hide');
                                 $('#alertMessage').text('Error en la conexión: ' + error);
                                 $('#alertModal').modal('show');
+                            },
+                            complete: function() {
+                                // Asegurar que el indicador sea visible al menos 1 segundo
+                                let elapsedTime = Date.now() - startTime;
+                                let delay = elapsedTime < 1000 ? 1000 - elapsedTime : 0;
+                                setTimeout(function() {
+                                    $('#loadingIndicator').removeClass('show').css('display', 'none');
+                                    $('#confirmationMessage').show();
+                                    $('#confirmAction').prop('disabled', false); // Rehabilitar el botón "Confirmar"
+                                }, delay);
                             }
                         });
                     });
