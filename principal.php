@@ -27,22 +27,7 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
 }
 ?>
 
-<!-- Mostrar mensajes si existen -->
-<?php if (isset($_SESSION['MensajeTexto']) && isset($_SESSION['MensajeTipo'])): ?>
-    <div class="<?php echo $_SESSION['MensajeTipo']; ?>" id="mensaje">
-        <?php 
-        echo $_SESSION['MensajeTexto'];
-        // Limpiar mensajes después de mostrarlos
-        unset($_SESSION['MensajeTexto']);
-        unset($_SESSION['MensajeTipo']);
-        ?>
-    </div>
-    <script>
-        setTimeout(function() {
-            document.getElementById('mensaje').style.display = 'none';
-        }, 5000);
-    </script>
-<?php endif; ?>
+
 
 <!DOCTYPE html>
 <html lang="es">
@@ -115,6 +100,23 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
             </div>
         </div>
     </section>
+    
+    <!-- Mostrar mensajes si existen -->
+<?php if (isset($_SESSION['MensajeTexto']) && isset($_SESSION['MensajeTipo'])): ?>
+    <div class="<?php echo $_SESSION['MensajeTipo']; ?>" id="mensaje">
+        <?php 
+        echo $_SESSION['MensajeTexto'];
+        // Limpiar mensajes después de mostrarlos
+        unset($_SESSION['MensajeTexto']);
+        unset($_SESSION['MensajeTipo']);
+        ?>
+    </div>
+    <script>
+        setTimeout(function() {
+            document.getElementById('mensaje').style.display = 'none';
+        }, 5000);
+    </script>
+<?php endif; ?>
 
     <!-- Mensaje de alerta -->
     <div class="row">

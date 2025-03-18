@@ -94,7 +94,7 @@ if (isset($_POST['date']) && isset($_POST['id_doctor']) && isset($_POST['action'
                         $mail->Body = "
                             <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;'>
                                 <div style='text-align: center;'>
-                                    <img src='https://drive.google.com/file/d/1mgP5sI1Ataqpt1NWibuskR8QOXEbvR4O/view?usp=sharing' alt='Perfect Teeth Logo' style='max-width: 150px;'>
+                                    <img src='https://i.imgur.com/vVp6wUp.png' alt='Perfect Teeth Logo' style='max-width: 150px;'>
                                 </div>
                                 <h2 style='color: #6f42c1; text-align: center;'>Cancelación de Cita</h2>
                                 <p>Estimado/a <strong>" . htmlspecialchars($appointment['nombre'], ENT_QUOTES, 'UTF-8') . "</strong>,</p>
