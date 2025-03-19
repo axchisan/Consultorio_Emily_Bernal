@@ -100,23 +100,23 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
             </div>
         </div>
     </section>
-    
+
     <!-- Mostrar mensajes si existen -->
-<?php if (isset($_SESSION['MensajeTexto']) && isset($_SESSION['MensajeTipo'])): ?>
-    <div class="<?php echo $_SESSION['MensajeTipo']; ?>" id="mensaje">
-        <?php 
-        echo $_SESSION['MensajeTexto'];
-        // Limpiar mensajes después de mostrarlos
-        unset($_SESSION['MensajeTexto']);
-        unset($_SESSION['MensajeTipo']);
-        ?>
-    </div>
-    <script>
-        setTimeout(function() {
-            document.getElementById('mensaje').style.display = 'none';
-        }, 5000);
-    </script>
-<?php endif; ?>
+    <?php if (isset($_SESSION['MensajeTexto']) && isset($_SESSION['MensajeTipo'])): ?>
+        <div class="<?php echo $_SESSION['MensajeTipo']; ?>" id="mensaje">
+            <?php
+            echo $_SESSION['MensajeTexto'];
+            // Limpiar mensajes después de mostrarlos
+            unset($_SESSION['MensajeTexto']);
+            unset($_SESSION['MensajeTipo']);
+            ?>
+        </div>
+        <script>
+            setTimeout(function() {
+                document.getElementById('mensaje').style.display = 'none';
+            }, 5000);
+        </script>
+    <?php endif; ?>
 
     <!-- Mensaje de alerta -->
     <div class="row">
@@ -439,16 +439,16 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                 </div>
                 <div class="col-md-4 col-sm-4">
                     <div class="footer-thumb">
-                        <h4 class="wow fadeInUp" data-wow-delay="0.4s">Últimas noticias</h4>
+                        <h4 class="wow fadeInUp" data-wow-delay="0.4s">Últimas Noticias</h4>
                         <div class="latest-stories">
                             <div class="stories-image">
                                 <a href="" target="_blank"><img src="src/img/blanqueamiento.jpg" class="img-responsive" alt=""></a>
                             </div>
                             <div class="stories-info">
                                 <a href="" target="_blank">
-                                    <h5>Blanqueamiento dental</h5>
+                                    <h5>Últimas Tecnologías</h5>
                                 </a>
-                                <span>Fecha</span>
+                                <span>en el proceso dental</span>
                             </div>
                         </div>
                         <div class="latest-stories">
@@ -457,9 +457,9 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                             </div>
                             <div class="stories-info">
                                 <a href="" target="_blank">
-                                    <h5>Evolución de la odontología moderna</h5>
+                                    <h5>Valoración Gratis</h5>
                                 </a>
-                                <span>Fecha</span>
+                                <span>Emily Bernal</span>
                             </div>
                         </div>
                     </div>
@@ -467,14 +467,16 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                 <div class="col-md-4 col-sm-4">
                     <div class="footer-thumb">
                         <div class="opening-hours">
-                            <h4 class="wow fadeInUp" data-wow-delay="0.4s">Horario de apertura</h4>
-                            <p>Lunes - Viernes <span>08:00 AM - 7:00 PM</span></p>
+                            <h4 class="wow fadeInUp" data-wow-delay="0.4s">Horario de Atención</h4>
+                            <p>Lunes - Viernes <span>08:30 AM - 6:00 PM</span></p>
                             <p>Sábado <span>Cerrado</span></p>
                             <p>Domingo <span>Cerrado</span></p>
                         </div>
                         <ul class="social-icon">
-                            <li><a href="https://www.facebook.com" target="_blank" class="fa fa-facebook-square" attr="facebook icon"></a></li>
                             <li><a href="https://wa.me/message/WZSLOAVLHOAJB1" target="_blank" class="fa fa-whatsapp" attr="whatsapp icon"></a></li>
+                            <li><a href="https://instagram.com/dra.emilybernal?igshid=MzNlNGNkZWQ4Mg==" target="_blank" class="fa fa-instagram" attr="instagram icon"></a></li>
+
+
                         </ul>
                     </div>
                 </div>
@@ -489,7 +491,7 @@ if (!validarToken($link, $vUsuario, 'Paciente', $_SESSION['session_token'])) {
                             <a>Política de privacidad</a>
                             <a>Cookies</a>
                             <a>Avisos legales</a>
-                            <a href="https://www.facebook.com" target="_blank">Facebook</a>
+                            
 
                         </div>
                     </div>
