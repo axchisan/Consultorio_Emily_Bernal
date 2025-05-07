@@ -80,12 +80,12 @@ if (isset($_POST['date']) && isset($_POST['id_doctor']) && isset($_POST['action'
                     $mail->isSMTP();
                     $mail->Host = 'smtp.gmail.com';
                     $mail->SMTPAuth = true;
-                    $mail->Username = 'arciniegasgerenaduvanyair@gmail.com';
-                    $mail->Password = 'yhad jjzz ygxe ignl';
+                    $mail->Username = '#email';
+                    $mail->Password = '#contraseña privada';
                     $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
                     $mail->Port = 465;
                     $mail->CharSet = 'UTF-8';
-                    $mail->setFrom('arciniegasgerenaduvanyair@gmail.com', 'Clínica Dental Perfect Teeth');
+                    $mail->setFrom('#email', 'Clínica Dental Perfect Teeth');
                     $mail->isHTML(true);
 
                     foreach ($appointmentsToDelete as $appointment) {
