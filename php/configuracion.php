@@ -1,7 +1,7 @@
 <?php
 
-define('host', '127.0.01');
-define('user', 'root');
+define('host', '');
+define('user', '');
 define('password', '');
-define('database', 'perfect_teeth');
+define('database', '');
 define('llave', '');
