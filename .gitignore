@@ -4,3 +4,10 @@ _recursos_/AnyChart
 _recursos_/DataTables
 _recursos_/jquery-confirm-v3.3.4
 
+
+# Archivos subidos por usuarios y volcados con datos
+uploads/**/*
+!uploads/**/
+!uploads/**/.gitkeep
+*.sql
+!database/esquema.sql
